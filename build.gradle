@@ -1,3 +1,4 @@
+//file:noinspection SpellCheckingInspection
 plugins {
     id 'java'
     id 'org.springframework.boot' version '3.0.4'
@@ -8,10 +9,21 @@ group = 'com.linweiyuan'
 version = '1.0.0'
 sourceCompatibility = '17'
 
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
 repositories {
     mavenCentral()
+    mavenLocal()
 }
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    implementation 'org.seleniumhq.selenium:selenium-java:4.8.0'
+    implementation 'com.linweiyuan:logger-spring-boot-starter:1.0.0'
 }
