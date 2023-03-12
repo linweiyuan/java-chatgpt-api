@@ -28,4 +28,9 @@ public interface ConversationService {
             String conversationId,
             UpdateConversationRequest updateConversationRequest
     );
+
+    ResponseEntity<Boolean> clearConversations(
+            String accessToken,
+            UpdateConversationRequest updateConversationRequest
+    );
 }

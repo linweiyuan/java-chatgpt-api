@@ -10,6 +10,7 @@ public class Constant {
     public static final String GEN_CONVERSATION_TITLE_URL = API_URL + "/conversation/gen_title/%s";
     public static final String GET_CONVERSATION_CONTENT_URL = API_URL + "/conversation/%s";
     public static final String UPDATE_CONVERSATION_URL = API_URL + "/conversation/%s";
+    public static final String CLEAR_CONVERSATIONS_URL = API_URL + "/conversations";
 
     public static final String MODEL = "text-davinci-002-render-sha";
 

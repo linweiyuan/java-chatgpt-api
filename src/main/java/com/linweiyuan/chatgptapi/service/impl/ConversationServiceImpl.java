@@ -206,4 +206,23 @@ public class ConversationServiceImpl implements ConversationService {
 
         return ResponseEntity.ok((Boolean) objectMapper.readValue(responseText, Map.class).get("success"));
     }
+
+    @SneakyThrows
+    @Override
+    public ResponseEntity<Boolean> clearConversations(String accessToken, UpdateConversationRequest updateConversationRequest) {
+        var executor = (JavascriptExecutor) webDriver;
+
+        var jsonBody = objectMapper.writeValueAsString(updateConversationRequest);
+
+        var responseText = (String) executor.executeScript("""
+                var xhr = new XMLHttpRequest();
+                xhr.open('PATCH', '%s', false);
+                xhr.setRequestHeader('Authorization', '%s');
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.send('%s');
+                return xhr.responseText;
+                """.formatted(Constant.CLEAR_CONVERSATIONS_URL, accessToken, jsonBody));
+
+        return ResponseEntity.ok((Boolean) objectMapper.readValue(responseText, Map.class).get("success"));
+    }
 }

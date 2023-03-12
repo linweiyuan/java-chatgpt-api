@@ -60,4 +60,12 @@ public class ConversationController {
     ) {
         return conversationService.updateConversation(accessToken, conversationId, updateConversationRequest);
     }
+
+    @PostMapping("/conversations")
+    public ResponseEntity<Boolean> clearConversations(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String accessToken,
+            @RequestBody UpdateConversationRequest updateConversationRequest
+    ) {
+        return conversationService.clearConversations(accessToken, updateConversationRequest);
+    }
 }
