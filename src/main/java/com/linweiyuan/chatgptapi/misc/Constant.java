@@ -6,8 +6,11 @@ public class Constant {
     public static final String CHATGPT_URL = SERVER_URL + "/chat";
     public static final String API_URL = SERVER_URL + "/backend-api";
     public static final String GET_CONVERSATIONS_URL = API_URL + "/conversations?offset=%d&limit=%d";
+    public static final String START_CONVERSATIONS_URL = API_URL + "/conversation";
 
-    public static final int SCRIPT_EXECUTION_TIMEOUT = 30;
+    public static final String MODEL = "text-davinci-002-render-sha";
+
+    public static final int SCRIPT_EXECUTION_TIMEOUT = 1;
 
     public static final String DEFAULT_OFFSET = "0";
     public static final String DEFAULT_LIMIT = "20";

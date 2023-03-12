@@ -16,8 +16,8 @@ public class WebDriverAutoRefreshScheduler {
         this.webDriver = webDriver;
     }
 
-    // refresh cookies every 5 minutes, to avoid cloudflare 403
-    @Scheduled(cron = "0 0/5 * * * ?")
+    // refresh cookies every 3 minutes, to avoid cloudflare 403
+    @Scheduled(fixedRate = 1000 * 60 * 3)
     public void runTask() {
         webDriver.navigate().refresh();
         log.info("active refresh: {}", LocalDateTime.now());
