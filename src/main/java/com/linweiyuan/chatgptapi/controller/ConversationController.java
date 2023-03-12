@@ -68,4 +68,12 @@ public class ConversationController {
     ) {
         return conversationService.clearConversations(accessToken, updateConversationRequest);
     }
+
+    @PostMapping("/conversation/message_feedback")
+    public ResponseEntity<String> feedbackMessage(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String accessToken,
+            @RequestBody FeedbackRequest feedbackRequest
+    ) {
+        return conversationService.feedbackMessage(accessToken, feedbackRequest);
+    }
 }

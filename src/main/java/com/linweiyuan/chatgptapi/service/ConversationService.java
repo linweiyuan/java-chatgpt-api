@@ -33,4 +33,9 @@ public interface ConversationService {
             String accessToken,
             UpdateConversationRequest updateConversationRequest
     );
+
+    ResponseEntity<String> feedbackMessage(
+            String accessToken,
+            FeedbackRequest feedbackRequest
+    );
 }
