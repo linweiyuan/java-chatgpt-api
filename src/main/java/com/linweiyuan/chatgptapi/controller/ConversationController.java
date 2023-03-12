@@ -56,8 +56,8 @@ public class ConversationController {
     public ResponseEntity<Boolean> renameConversation(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String accessToken,
             @PathVariable String conversationId,
-            @RequestBody RenameConversationTitleRequest renameConversationTitleRequest
+            @RequestBody UpdateConversationRequest updateConversationRequest
     ) {
-        return conversationService.renameConversation(accessToken, conversationId, renameConversationTitleRequest);
+        return conversationService.updateConversation(accessToken, conversationId, updateConversationRequest);
     }
 }

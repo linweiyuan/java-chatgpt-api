@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linweiyuan.chatgptapi.misc.Constant;
 import com.linweiyuan.chatgptapi.model.*;
 import com.linweiyuan.chatgptapi.service.ConversationService;
-import io.netty.util.internal.StringUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.JavascriptExecutor;
@@ -12,6 +11,7 @@ import org.openqa.selenium.WebDriver;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 
 import java.time.LocalDateTime;
@@ -81,7 +81,7 @@ public class ConversationServiceImpl implements ConversationService {
                 "model", Constant.MODEL,
                 "parent_message_id", startConversationRequest.parentMessageId()
         ));
-        if (!StringUtil.isNullOrEmpty(conversationId)) {
+        if (StringUtils.hasText(conversationId)) {
             requestMap.put("conversation_id", conversationId);
         }
 
@@ -186,16 +186,14 @@ public class ConversationServiceImpl implements ConversationService {
 
     @SneakyThrows
     @Override
-    public ResponseEntity<Boolean> renameConversation(
+    public ResponseEntity<Boolean> updateConversation(
             String accessToken,
             String conversationId,
-            RenameConversationTitleRequest renameConversationTitleRequest
+            UpdateConversationRequest updateConversationRequest
     ) {
         var executor = (JavascriptExecutor) webDriver;
 
-        var jsonBody = objectMapper.writeValueAsString(Map.of(
-                "title", renameConversationTitleRequest.title()
-        ));
+        var jsonBody = objectMapper.writeValueAsString(updateConversationRequest);
 
         var responseText = (String) executor.executeScript("""
                 var xhr = new XMLHttpRequest();
@@ -204,7 +202,7 @@ public class ConversationServiceImpl implements ConversationService {
                 xhr.setRequestHeader('Content-Type', 'application/json');
                 xhr.send('%s');
                 return xhr.responseText;
-                """.formatted(String.format(Constant.RENAME_CONVERSATION_TITLE_URL, conversationId), accessToken, jsonBody));
+                """.formatted(String.format(Constant.UPDATE_CONVERSATION_URL, conversationId), accessToken, jsonBody));
 
         return ResponseEntity.ok((Boolean) objectMapper.readValue(responseText, Map.class).get("success"));
     }

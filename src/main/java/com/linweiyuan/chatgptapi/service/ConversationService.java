@@ -23,9 +23,9 @@ public interface ConversationService {
             String conversationId
     );
 
-    ResponseEntity<Boolean> renameConversation(
+    ResponseEntity<Boolean> updateConversation(
             String accessToken,
             String conversationId,
-            RenameConversationTitleRequest renameConversationTitleRequest
+            UpdateConversationRequest updateConversationRequest
     );
 }
