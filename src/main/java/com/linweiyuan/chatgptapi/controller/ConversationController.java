@@ -43,4 +43,12 @@ public class ConversationController {
     ) {
         return conversationService.genConversationTitle(accessToken, conversationId, genConversationTitleRequest);
     }
+
+    @GetMapping("/conversation/{conversationId}")
+    public ResponseEntity<GetConversationContentResponse> getConversationContent(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String accessToken,
+            @PathVariable String conversationId
+    ) {
+        return conversationService.getConversationContent(accessToken, conversationId);
+    }
 }

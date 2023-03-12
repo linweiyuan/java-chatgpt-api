@@ -96,6 +96,8 @@ public class ConversationServiceImpl implements ConversationService {
                 xhr.onreadystatechange = function() {
                     if (xhr.readyState === 3 && xhr.status === 200) {
                         window.postMessage(xhr.responseText);
+                    } else if (xhr.status === 429) {
+                        window.postMessage("429");
                     }
                 }
                 xhr.send('%s');
@@ -114,6 +116,12 @@ public class ConversationServiceImpl implements ConversationService {
                                 window.removeEventListener('message', handleFunction);
                                 window.addEventListener('message', handleFunction);
                                 """);
+                        // how to return a customized message to response
+                        if (eventData.equals("429")) {
+                            fluxSink.complete();
+                            break;
+                        }
+
                         var last = Arrays.stream(eventData.split("\n\n"))
                                 .map(event -> event.replaceAll("data: ", ""))
                                 .reduce((first, second) -> second)
@@ -160,5 +168,21 @@ public class ConversationServiceImpl implements ConversationService {
                 """.formatted(String.format(Constant.GEN_CONVERSATION_TITLE_URL, conversationId), accessToken, jsonString));
 
         return ResponseEntity.ok(objectMapper.readValue(json, GenConversationTitleResponse.class));
+    }
+
+    @SneakyThrows
+    @Override
+    public ResponseEntity<GetConversationContentResponse> getConversationContent(String accessToken, String conversationId) {
+        var executor = (JavascriptExecutor) webDriver;
+
+        var json = (String) executor.executeScript("""
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', '%s', false);
+                xhr.setRequestHeader('Authorization', '%s');
+                xhr.send();
+                return xhr.responseText;
+                """.formatted(String.format(Constant.GET_CONVERSATION_CONTENT_URL, conversationId), accessToken));
+
+        return ResponseEntity.ok(objectMapper.readValue(json, GetConversationContentResponse.class));
     }
 }

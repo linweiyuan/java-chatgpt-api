@@ -17,4 +17,9 @@ public interface ConversationService {
             String conversationId,
             GenConversationTitleRequest genConversationTitleRequest
     );
+
+    ResponseEntity<GetConversationContentResponse> getConversationContent(
+            String accessToken,
+            String conversationId
+    );
 }

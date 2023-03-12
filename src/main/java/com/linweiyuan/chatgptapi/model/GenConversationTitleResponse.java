@@ -1,6 +1,7 @@
- package com.linweiyuan.chatgptapi.model;
+package com.linweiyuan.chatgptapi.model;
 
 public record GenConversationTitleResponse(
-        String title
+        String title,
+        String message
 ) {
 }
