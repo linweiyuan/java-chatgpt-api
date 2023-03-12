@@ -7,6 +7,7 @@ public class Constant {
     public static final String API_URL = SERVER_URL + "/backend-api";
     public static final String GET_CONVERSATIONS_URL = API_URL + "/conversations?offset=%d&limit=%d";
     public static final String START_CONVERSATIONS_URL = API_URL + "/conversation";
+    public static final String GEN_CONVERSATION_TITLE_URL = API_URL + "/conversation/gen_title/%s";
 
     public static final String MODEL = "text-davinci-002-render-sha";
 

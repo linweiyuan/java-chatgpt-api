@@ -48,11 +48,12 @@ public class ConversationServiceImpl implements ConversationService {
                 """.formatted(String.format(Constant.GET_CONVERSATIONS_URL, offset, limit), accessToken));
 
         if (json.startsWith("<html>")) {
-            var count = retryCount.getAndIncrement();
-            if (count < Constant.MAXIMUM_RETRY_COUNT) {
+            var count = retryCount.incrementAndGet();
+            if (count <= Constant.MAXIMUM_RETRY_COUNT) {
                 webDriver.navigate().refresh();
                 TimeUnit.SECONDS.sleep(1);
                 log.info("passive refresh: {}, retry count: {}", LocalDateTime.now(), count);
+                return getConversations(accessToken, offset, limit);
             }
             retryCount.set(0);
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
@@ -131,5 +132,33 @@ public class ConversationServiceImpl implements ConversationService {
             });
             executorService.shutdown();
         });
+    }
+
+    @SneakyThrows
+    @Override
+    public ResponseEntity<GenConversationTitleResponse> genConversationTitle(
+            String accessToken,
+            String conversationId,
+            GenConversationTitleRequest genConversationTitleRequest
+    ) {
+        var executor = (JavascriptExecutor) webDriver;
+
+        var requestMap = Map.of(
+                "message_id", genConversationTitleRequest.messageId(),
+                "model", Constant.MODEL
+        );
+
+        var jsonString = objectMapper.writeValueAsString(requestMap);
+
+        var json = (String) executor.executeScript("""
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', '%s', false);
+                xhr.setRequestHeader('Authorization', '%s');
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.send('%s');
+                return xhr.responseText;
+                """.formatted(String.format(Constant.GEN_CONVERSATION_TITLE_URL, conversationId), accessToken, jsonString));
+
+        return ResponseEntity.ok(objectMapper.readValue(json, GenConversationTitleResponse.class));
     }
 }

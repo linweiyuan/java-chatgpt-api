@@ -1,9 +1,7 @@
 package com.linweiyuan.chatgptapi.controller;
 
 import com.linweiyuan.chatgptapi.misc.Constant;
-import com.linweiyuan.chatgptapi.model.GetConversationsResponse;
-import com.linweiyuan.chatgptapi.model.StartConversationRequest;
-import com.linweiyuan.chatgptapi.model.StartConversationResponse;
+import com.linweiyuan.chatgptapi.model.*;
 import com.linweiyuan.chatgptapi.service.ConversationService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -35,5 +33,14 @@ public class ConversationController {
             @RequestBody StartConversationRequest startConversationRequest
     ) {
         return conversationService.startConversation(accessToken, startConversationRequest);
+    }
+
+    @PostMapping("/conversation/gen_title/{conversationId}")
+    public ResponseEntity<GenConversationTitleResponse> genConversationTitle(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String accessToken,
+            @PathVariable String conversationId,
+            @RequestBody GenConversationTitleRequest genConversationTitleRequest
+    ) {
+        return conversationService.genConversationTitle(accessToken, conversationId, genConversationTitleRequest);
     }
 }
