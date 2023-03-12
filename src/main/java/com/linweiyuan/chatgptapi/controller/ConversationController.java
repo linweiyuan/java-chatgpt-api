@@ -51,4 +51,13 @@ public class ConversationController {
     ) {
         return conversationService.getConversationContent(accessToken, conversationId);
     }
+
+    @PostMapping("/conversation/{conversationId}")
+    public ResponseEntity<Boolean> renameConversation(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String accessToken,
+            @PathVariable String conversationId,
+            @RequestBody RenameConversationTitleRequest renameConversationTitleRequest
+    ) {
+        return conversationService.renameConversation(accessToken, conversationId, renameConversationTitleRequest);
+    }
 }

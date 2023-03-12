@@ -22,4 +22,10 @@ public interface ConversationService {
             String accessToken,
             String conversationId
     );
+
+    ResponseEntity<Boolean> renameConversation(
+            String accessToken,
+            String conversationId,
+            RenameConversationTitleRequest renameConversationTitleRequest
+    );
 }

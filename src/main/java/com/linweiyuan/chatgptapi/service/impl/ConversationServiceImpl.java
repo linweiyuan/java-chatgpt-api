@@ -39,7 +39,7 @@ public class ConversationServiceImpl implements ConversationService {
     public ResponseEntity<GetConversationsResponse> getConversations(String accessToken, int offset, int limit) {
         var executor = (JavascriptExecutor) webDriver;
 
-        var json = (String) executor.executeScript("""
+        var responseText = (String) executor.executeScript("""
                 var xhr = new XMLHttpRequest();
                 xhr.open('GET', '%s', false);
                 xhr.setRequestHeader('Authorization', '%s');
@@ -47,7 +47,7 @@ public class ConversationServiceImpl implements ConversationService {
                 return xhr.responseText;
                 """.formatted(String.format(Constant.GET_CONVERSATIONS_URL, offset, limit), accessToken));
 
-        if (json.startsWith("<html>")) {
+        if (responseText.startsWith("<html>")) {
             var count = retryCount.incrementAndGet();
             if (count <= Constant.MAXIMUM_RETRY_COUNT) {
                 webDriver.navigate().refresh();
@@ -58,7 +58,7 @@ public class ConversationServiceImpl implements ConversationService {
             retryCount.set(0);
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
         } else {
-            return ResponseEntity.ok(objectMapper.readValue(json, GetConversationsResponse.class));
+            return ResponseEntity.ok(objectMapper.readValue(responseText, GetConversationsResponse.class));
         }
     }
 
@@ -85,7 +85,7 @@ public class ConversationServiceImpl implements ConversationService {
             requestMap.put("conversation_id", conversationId);
         }
 
-        var jsonString = objectMapper.writeValueAsString(requestMap);
+        var jsonBody = objectMapper.writeValueAsString(requestMap);
 
         executor.executeScript("""
                 var xhr = new XMLHttpRequest();
@@ -101,7 +101,7 @@ public class ConversationServiceImpl implements ConversationService {
                     }
                 }
                 xhr.send('%s');
-                """.formatted(Constant.START_CONVERSATIONS_URL, accessToken, jsonString));
+                """.formatted(Constant.START_CONVERSATIONS_URL, accessToken, jsonBody));
 
         return Flux.create(fluxSink -> {
             var executorService = Executors.newSingleThreadExecutor();
@@ -151,23 +151,21 @@ public class ConversationServiceImpl implements ConversationService {
     ) {
         var executor = (JavascriptExecutor) webDriver;
 
-        var requestMap = Map.of(
+        var jsonBody = objectMapper.writeValueAsString(Map.of(
                 "message_id", genConversationTitleRequest.messageId(),
                 "model", Constant.MODEL
-        );
+        ));
 
-        var jsonString = objectMapper.writeValueAsString(requestMap);
-
-        var json = (String) executor.executeScript("""
+        var responseText = (String) executor.executeScript("""
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', '%s', false);
                 xhr.setRequestHeader('Authorization', '%s');
                 xhr.setRequestHeader('Content-Type', 'application/json');
                 xhr.send('%s');
                 return xhr.responseText;
-                """.formatted(String.format(Constant.GEN_CONVERSATION_TITLE_URL, conversationId), accessToken, jsonString));
+                """.formatted(String.format(Constant.GEN_CONVERSATION_TITLE_URL, conversationId), accessToken, jsonBody));
 
-        return ResponseEntity.ok(objectMapper.readValue(json, GenConversationTitleResponse.class));
+        return ResponseEntity.ok(objectMapper.readValue(responseText, GenConversationTitleResponse.class));
     }
 
     @SneakyThrows
@@ -175,7 +173,7 @@ public class ConversationServiceImpl implements ConversationService {
     public ResponseEntity<GetConversationContentResponse> getConversationContent(String accessToken, String conversationId) {
         var executor = (JavascriptExecutor) webDriver;
 
-        var json = (String) executor.executeScript("""
+        var responseText = (String) executor.executeScript("""
                 var xhr = new XMLHttpRequest();
                 xhr.open('GET', '%s', false);
                 xhr.setRequestHeader('Authorization', '%s');
@@ -183,6 +181,31 @@ public class ConversationServiceImpl implements ConversationService {
                 return xhr.responseText;
                 """.formatted(String.format(Constant.GET_CONVERSATION_CONTENT_URL, conversationId), accessToken));
 
-        return ResponseEntity.ok(objectMapper.readValue(json, GetConversationContentResponse.class));
+        return ResponseEntity.ok(objectMapper.readValue(responseText, GetConversationContentResponse.class));
+    }
+
+    @SneakyThrows
+    @Override
+    public ResponseEntity<Boolean> renameConversation(
+            String accessToken,
+            String conversationId,
+            RenameConversationTitleRequest renameConversationTitleRequest
+    ) {
+        var executor = (JavascriptExecutor) webDriver;
+
+        var jsonBody = objectMapper.writeValueAsString(Map.of(
+                "title", renameConversationTitleRequest.title()
+        ));
+
+        var responseText = (String) executor.executeScript("""
+                var xhr = new XMLHttpRequest();
+                xhr.open('PATCH', '%s', false);
+                xhr.setRequestHeader('Authorization', '%s');
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.send('%s');
+                return xhr.responseText;
+                """.formatted(String.format(Constant.RENAME_CONVERSATION_TITLE_URL, conversationId), accessToken, jsonBody));
+
+        return ResponseEntity.ok((Boolean) objectMapper.readValue(responseText, Map.class).get("success"));
     }
 }
