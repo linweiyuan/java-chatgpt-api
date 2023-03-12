@@ -14,7 +14,7 @@ public class Constant {
 
     public static final String MODEL = "text-davinci-002-render-sha";
 
-    public static final int SCRIPT_EXECUTION_TIMEOUT = 1;
+    public static final int SCRIPT_EXECUTION_TIMEOUT = 5;
 
     public static final String DEFAULT_OFFSET = "0";
     public static final String DEFAULT_LIMIT = "20";

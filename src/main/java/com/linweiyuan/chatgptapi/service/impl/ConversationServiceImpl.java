@@ -8,17 +8,13 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Service
@@ -26,8 +22,6 @@ public class ConversationServiceImpl implements ConversationService {
     private final WebDriver webDriver;
 
     private final ObjectMapper objectMapper;
-
-    private final AtomicInteger retryCount = new AtomicInteger(0);
 
     public ConversationServiceImpl(WebDriver webDriver, ObjectMapper objectMapper) {
         this.webDriver = webDriver;
@@ -39,30 +33,16 @@ public class ConversationServiceImpl implements ConversationService {
     public ResponseEntity<GetConversationsResponse> getConversations(String accessToken, int offset, int limit) {
         var executor = (JavascriptExecutor) webDriver;
 
-        var responseText = (String) executor.executeScript("""
-                var xhr = new XMLHttpRequest();
-                xhr.open('GET', '%s', false);
-                xhr.setRequestHeader('Authorization', '%s');
-                xhr.send();
-                return xhr.responseText;
-                """.formatted(String.format(Constant.GET_CONVERSATIONS_URL, offset, limit), accessToken));
+        var responseText = (String) executor.executeScript(
+                getGetScript(
+                        String.format(Constant.GET_CONVERSATIONS_URL, offset, limit),
+                        accessToken
+                )
+        );
 
-        if (responseText.startsWith("<html>")) {
-            var count = retryCount.incrementAndGet();
-            if (count <= Constant.MAXIMUM_RETRY_COUNT) {
-                webDriver.navigate().refresh();
-                TimeUnit.SECONDS.sleep(1);
-                log.info("passive refresh: {}, retry count: {}", LocalDateTime.now(), count);
-                return getConversations(accessToken, offset, limit);
-            }
-            retryCount.set(0);
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
-        } else {
-            return ResponseEntity.ok(objectMapper.readValue(responseText, GetConversationsResponse.class));
-        }
+        return ResponseEntity.ok(objectMapper.readValue(responseText, GetConversationsResponse.class));
     }
 
-    @SuppressWarnings("SpellCheckingInspection")
     @SneakyThrows
     @Override
     public Flux<StartConversationResponse> startConversation(String accessToken, StartConversationRequest startConversationRequest) {
@@ -87,36 +67,22 @@ public class ConversationServiceImpl implements ConversationService {
 
         var jsonBody = objectMapper.writeValueAsString(requestMap);
 
-        executor.executeScript("""
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', '%s', true);
-                xhr.setRequestHeader('Accept', 'text/event-stream');
-                xhr.setRequestHeader('Authorization', '%s');
-                xhr.setRequestHeader('Content-Type', 'application/json');
-                xhr.onreadystatechange = function() {
-                    if (xhr.readyState === 3 && xhr.status === 200) {
-                        window.postMessage(xhr.responseText);
-                    } else if (xhr.status === 429) {
-                        window.postMessage("429");
-                    }
-                }
-                xhr.send('%s');
-                """.formatted(Constant.START_CONVERSATIONS_URL, accessToken, jsonBody));
+        executor.executeScript(
+                getPostScriptForStartConversation(
+                        Constant.START_CONVERSATIONS_URL,
+                        accessToken,
+                        jsonBody
+                )
+        );
 
         return Flux.create(fluxSink -> {
             var executorService = Executors.newSingleThreadExecutor();
             executorService.submit(() -> {
                 while (true) {
                     try {
-                        var eventData = (String) executor.executeAsyncScript("""
-                                var callback = arguments[arguments.length - 1];
-                                var handleFunction = function(event) {
-                                    callback(event.data);
-                                };
-                                window.removeEventListener('message', handleFunction);
-                                window.addEventListener('message', handleFunction);
-                                """);
-                        // how to return a customized message to response
+                        // TODO: is there a good way to handle this?
+                        var eventData = (String) executor.executeAsyncScript(getCallbackScriptForStartConversation());
+                        // TODO: how to return a customized message to response?
                         if (eventData.equals("429")) {
                             fluxSink.complete();
                             break;
@@ -127,6 +93,10 @@ public class ConversationServiceImpl implements ConversationService {
                                 .reduce((first, second) -> second)
                                 .orElse("")
                                 .trim();
+                        if (last.startsWith("event") || last.startsWith("20")) {
+                            continue;
+                        }
+
                         if (last.equals("[DONE]") || last.isBlank()) {
                             fluxSink.complete();
                             break;
@@ -156,14 +126,13 @@ public class ConversationServiceImpl implements ConversationService {
                 "model", Constant.MODEL
         ));
 
-        var responseText = (String) executor.executeScript("""
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', '%s', false);
-                xhr.setRequestHeader('Authorization', '%s');
-                xhr.setRequestHeader('Content-Type', 'application/json');
-                xhr.send('%s');
-                return xhr.responseText;
-                """.formatted(String.format(Constant.GEN_CONVERSATION_TITLE_URL, conversationId), accessToken, jsonBody));
+        var responseText = (String) executor.executeScript(
+                getPostScript(
+                        String.format(Constant.GEN_CONVERSATION_TITLE_URL, conversationId),
+                        accessToken,
+                        jsonBody
+                )
+        );
 
         return ResponseEntity.ok(objectMapper.readValue(responseText, GenConversationTitleResponse.class));
     }
@@ -173,13 +142,12 @@ public class ConversationServiceImpl implements ConversationService {
     public ResponseEntity<GetConversationContentResponse> getConversationContent(String accessToken, String conversationId) {
         var executor = (JavascriptExecutor) webDriver;
 
-        var responseText = (String) executor.executeScript("""
-                var xhr = new XMLHttpRequest();
-                xhr.open('GET', '%s', false);
-                xhr.setRequestHeader('Authorization', '%s');
-                xhr.send();
-                return xhr.responseText;
-                """.formatted(String.format(Constant.GET_CONVERSATION_CONTENT_URL, conversationId), accessToken));
+        var responseText = (String) executor.executeScript(
+                getGetScript(
+                        String.format(Constant.GET_CONVERSATION_CONTENT_URL, conversationId),
+                        accessToken
+                )
+        );
 
         return ResponseEntity.ok(objectMapper.readValue(responseText, GetConversationContentResponse.class));
     }
@@ -195,14 +163,13 @@ public class ConversationServiceImpl implements ConversationService {
 
         var jsonBody = objectMapper.writeValueAsString(updateConversationRequest);
 
-        var responseText = (String) executor.executeScript("""
-                var xhr = new XMLHttpRequest();
-                xhr.open('PATCH', '%s', false);
-                xhr.setRequestHeader('Authorization', '%s');
-                xhr.setRequestHeader('Content-Type', 'application/json');
-                xhr.send('%s');
-                return xhr.responseText;
-                """.formatted(String.format(Constant.UPDATE_CONVERSATION_URL, conversationId), accessToken, jsonBody));
+        var responseText = (String) executor.executeScript(
+                getPatchScript(
+                        String.format(Constant.UPDATE_CONVERSATION_URL, conversationId),
+                        accessToken,
+                        jsonBody
+                )
+        );
 
         return ResponseEntity.ok((Boolean) objectMapper.readValue(responseText, Map.class).get("success"));
     }
@@ -214,15 +181,70 @@ public class ConversationServiceImpl implements ConversationService {
 
         var jsonBody = objectMapper.writeValueAsString(updateConversationRequest);
 
-        var responseText = (String) executor.executeScript("""
+        var responseText = (String) executor.executeScript(getPatchScript(Constant.CLEAR_CONVERSATIONS_URL, accessToken, jsonBody));
+
+        return ResponseEntity.ok((Boolean) objectMapper.readValue(responseText, Map.class).get("success"));
+    }
+
+    private String getGetScript(String url, String accessToken) {
+        return """
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', '%s', false);
+                xhr.setRequestHeader('Authorization', '%s');
+                xhr.send();
+                return xhr.responseText;
+                """.formatted(url, accessToken);
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private String getPostScriptForStartConversation(String url, String accessToken, String jsonString) {
+        return """
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', '%s', true);
+                xhr.setRequestHeader('Accept', 'text/event-stream');
+                xhr.setRequestHeader('Authorization', '%s');
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 3 && xhr.status === 200) {
+                        window.postMessage(xhr.responseText);
+                    } else if (xhr.status === 429) {
+                        window.postMessage("429");
+                    }
+                }
+                xhr.send('%s');
+                """.formatted(url, accessToken, jsonString);
+    }
+
+    private String getCallbackScriptForStartConversation() {
+        return """
+                var callback = arguments[arguments.length - 1];
+                var handleFunction = function(event) {
+                    callback(event.data);
+                };
+                window.removeEventListener('message', handleFunction);
+                window.addEventListener('message', handleFunction);
+                """;
+    }
+
+    private String getPostScript(String url, String accessToken, String jsonBody) {
+        return """
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', '%s', false);
+                xhr.setRequestHeader('Authorization', '%s');
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.send('%s');
+                return xhr.responseText;
+                """.formatted(url, accessToken, jsonBody);
+    }
+
+    private String getPatchScript(String url, String accessToken, String jsonBody) {
+        return """
                 var xhr = new XMLHttpRequest();
                 xhr.open('PATCH', '%s', false);
                 xhr.setRequestHeader('Authorization', '%s');
                 xhr.setRequestHeader('Content-Type', 'application/json');
                 xhr.send('%s');
                 return xhr.responseText;
-                """.formatted(Constant.CLEAR_CONVERSATIONS_URL, accessToken, jsonBody));
-
-        return ResponseEntity.ok((Boolean) objectMapper.readValue(responseText, Map.class).get("success"));
+                """.formatted(url, accessToken, jsonBody);
     }
 }
