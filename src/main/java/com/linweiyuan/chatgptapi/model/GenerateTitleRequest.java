@@ -2,7 +2,7 @@ package com.linweiyuan.chatgptapi.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public record GenConversationTitleRequest(
+public record GenerateTitleRequest(
         @JsonProperty("message_id")
         String messageId
 ) {

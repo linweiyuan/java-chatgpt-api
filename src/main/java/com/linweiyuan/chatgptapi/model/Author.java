@@ -1,4 +1,6 @@
 package com.linweiyuan.chatgptapi.model;
 
-public record Author(String role) {
+public record Author(
+        String role
+) {
 }

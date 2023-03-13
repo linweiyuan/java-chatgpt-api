@@ -24,7 +24,9 @@ public class WebDriverConfig {
 
         chromeOptions.addArguments("--no-sandbox");
         chromeOptions.addArguments("--disable-gpu");
-        chromeOptions.addArguments("--headless=new");
+//        chromeOptions.addArguments("--headless=new");
+
+        chromeOptions.addArguments("--proxy-server=127.0.0.1:20171");
 
         var webDriver = new RemoteWebDriver(new URL(System.getenv("WEB_DRIVER_URL")), chromeOptions);
         webDriver.get(Constant.CHATGPT_URL);

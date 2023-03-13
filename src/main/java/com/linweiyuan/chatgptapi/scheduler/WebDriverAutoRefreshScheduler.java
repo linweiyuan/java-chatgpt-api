@@ -20,40 +20,66 @@ public class WebDriverAutoRefreshScheduler {
         this.webDriver = webDriver;
     }
 
-    // just like healthCheck, to avoid cloudflare 403
     @Scheduled(fixedRate = 1000 * 60 * 3, initialDelay = 1000 * 10)
-    public void test() {
-        var status = (Long) ((JavascriptExecutor) webDriver).executeAsyncScript("""
-                var callback = arguments[arguments.length - 1];
-                var xhr = new XMLHttpRequest();
-                xhr.open('GET', '%s', false);
-                xhr.onreadystatechange = function() {
-                    callback(xhr.status);
+    public void activeRefresh() {
+        webDriver.navigate().refresh();
+        log.debug("active refresh: {}", LocalDateTime.now());
+    }
+
+    @SuppressWarnings("PointlessArithmeticExpression")
+    @Scheduled(fixedRate = 1000 * 60 * 1, initialDelay = 1000 * 10)
+    public void passiveRefresh() {
+        try {
+            var status = (Long) ((JavascriptExecutor) webDriver).executeAsyncScript("""
+                    var callback = arguments[arguments.length - 1];
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('GET', '%s', false);
+                    xhr.onreadystatechange = function() {
+                        callback(xhr.status);
+                    }
+                    xhr.send();
+                    """.formatted(Constant.CHATGPT_URL));
+            if (status == HttpStatus.FORBIDDEN.value()) {
+                log.debug("passive refresh: {}", LocalDateTime.now());
+
+                webDriver.navigate().refresh();
+
+                var captchaDetected = haveCaptcha();
+                if (!captchaDetected) {
+                    log.debug("no captcha.");
+                } else {
+                    log.debug("captcha is detected!!!");
+                    tryToClickCaptchaTextBox();
                 }
-                xhr.send();
-                """.formatted(Constant.CHATGPT_URL));
-        if (status == HttpStatus.FORBIDDEN.value()) {
-            log.info("need to refresh: {}", LocalDateTime.now());
-
-            webDriver.navigate().refresh();
-
-            WebElement element = new FluentWait<>(webDriver)
-                    .withTimeout(Duration.ofSeconds(30))
-                    .pollingEvery(Duration.ofSeconds(5))
-                    .ignoring(NoSuchElementException.class)
-                    .until(driver -> driver.findElement(By.className("mb-2")));
-            if (element.getText().equals("Welcome to ChatGPT")) {
-                log.info("no captcha.");
-            } else {
-                log.info("captcha is detected!!!");
-
-                WebElement checkbox = new FluentWait<>(webDriver)
-                        .withTimeout(Duration.ofSeconds(30))
-                        .pollingEvery(Duration.ofSeconds(5))
-                        .ignoring(NoSuchElementException.class)
-                        .until(driver -> driver.findElement(By.cssSelector("input[type=checkbox]")));
-                checkbox.click();
             }
+        } catch (ScriptTimeoutException e) {
+            log.error("passiveRefresh failed: {}", e.toString());
+        }
+    }
+
+    private boolean haveCaptcha() {
+        var wait = new FluentWait<>(webDriver)
+                .withTimeout(Duration.ofSeconds(30))
+                .pollingEvery(Duration.ofSeconds(5))
+                .ignoring(NoSuchElementException.class)
+                .ignoring(TimeoutException.class);
+        var welcomeElement = wait.until(driver -> driver.findElement(By.className("mb-2")));
+        var welcomeText = welcomeElement.getText();
+        return !"Welcome to ChatGPT".equals(welcomeText);
+    }
+
+    private void tryToClickCaptchaTextBox() {
+        log.debug("try to click captcha");
+        var wait = new FluentWait<>(webDriver)
+                .withTimeout(Duration.ofSeconds(30))
+                .pollingEvery(Duration.ofSeconds(5))
+                .ignoring(NoSuchElementException.class);
+        WebElement checkbox = wait.until(driver -> driver.findElement(By.cssSelector("input[type=checkbox]")));
+        if (checkbox.isDisplayed()) {
+            log.debug("captcha is displayed.");
+            checkbox.click();
+        } else {
+            log.debug("captcha is not displayed.");
         }
     }
 }
