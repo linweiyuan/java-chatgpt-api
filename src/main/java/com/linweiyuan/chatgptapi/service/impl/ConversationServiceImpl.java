@@ -163,11 +163,11 @@ public class ConversationServiceImpl implements ConversationService {
                 xhr.setRequestHeader('Authorization', 'Bearer %s');
                 xhr.setRequestHeader('Content-Type', 'application/json');
                 xhr.onreadystatechange = function() {
-                    if (xhr.readyState === 3 && xhr.status === 200) {
+                    if (xhr.readyState === xhr.LOADING && xhr.status === 200) {
                         window.postMessage(xhr.responseText);
                     } else if (xhr.status === 429) {
                         window.postMessage("429");
-                    } if (xhr.readyState === 4) {
+                    } if (xhr.readyState === xhr.DONE) {
 
                     }
                 };
