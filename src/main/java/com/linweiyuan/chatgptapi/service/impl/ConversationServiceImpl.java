@@ -10,10 +10,9 @@ import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 
-import java.util.*;
+import java.util.Map;
 import java.util.concurrent.Executors;
 
 @Slf4j
@@ -42,59 +41,29 @@ public class ConversationServiceImpl implements ConversationService {
 
     @SneakyThrows
     @Override
-    public Flux<StartConversationResponse> startConversation(String accessToken, StartConversationRequest startConversationRequest) {
-        var conversationId = startConversationRequest.conversationId();
-        var requestMap = new HashMap<>(Map.of(
-                "action", "next",
-                "messages", Collections.singletonList(
-                        new Message(
-                                new Author("user"),
-                                new Content("text", Collections.singletonList(startConversationRequest.content())),
-                                UUID.randomUUID().toString(),
-                                "user"
-                        )),
-                "model", Constant.MODEL,
-                "parent_message_id", startConversationRequest.parentMessageId()
-        ));
-        if (StringUtils.hasText(conversationId)) {
-            requestMap.put("conversation_id", conversationId);
-        }
-        var jsonBody = objectMapper.writeValueAsString(requestMap);
-        js.executeScript(
-                getPostScriptForStartConversation(
-                        Constant.START_CONVERSATIONS_URL,
-                        accessToken,
-                        jsonBody
-                )
-        );
+    public Flux<String> startConversation(String accessToken, ConversationRequest conversationRequest) {
+        var requestBody = objectMapper.writeValueAsString(conversationRequest);
+        js.executeScript(getPostScriptForStartConversation(Constant.START_CONVERSATIONS_URL, accessToken, requestBody));
 
         return Flux.create(fluxSink -> {
             var executorService = Executors.newSingleThreadExecutor();
             executorService.submit(() -> {
                 while (true) {
                     try {
-                        // TODO: is there a good way to handle this?
                         var eventData = (String) js.executeAsyncScript(getCallbackScriptForStartConversation());
-                        // TODO: how to return a customized message to response?
                         if (eventData.equals("429")) {
+                            fluxSink.next(eventData);
                             fluxSink.complete();
                             break;
                         }
 
-                        var last = Arrays.stream(eventData.split("\n\n"))
-                                .map(event -> event.replaceAll("data: ", ""))
-                                .reduce((first, second) -> second)
-                                .orElse("")
-                                .trim();
-                        if (last.startsWith("event") || last.startsWith("20")) {
-                            continue;
-                        }
-
-                        if (last.equals("[DONE]") || last.isBlank()) {
+                        if (eventData.equals("[DONE]")) {
+                            fluxSink.next(eventData);
                             fluxSink.complete();
                             break;
                         }
-                        fluxSink.next(objectMapper.readValue(last, StartConversationResponse.class));
+
+                        fluxSink.next(eventData);
                     } catch (Exception e) {
                         fluxSink.complete();
                         break;
@@ -107,35 +76,32 @@ public class ConversationServiceImpl implements ConversationService {
 
     @SneakyThrows
     @Override
-    public ResponseEntity<GenConversationTitleResponse> genConversationTitle(
+    public ResponseEntity<GenerateTitleResponse> genConversationTitle(
             String accessToken,
             String conversationId,
-            GenConversationTitleRequest genConversationTitleRequest
+            GenerateTitleRequest generateTitleRequest
     ) {
-        var jsonBody = objectMapper.writeValueAsString(Map.of(
-                "message_id", genConversationTitleRequest.messageId(),
-                "model", Constant.MODEL
-        ));
+        var jsonBody = objectMapper.writeValueAsString(generateTitleRequest);
         var responseText = (String) js.executeScript(
                 getPostScript(
-                        String.format(Constant.GEN_CONVERSATION_TITLE_URL, conversationId),
+                        String.format(Constant.GENERATE_TITLE_URL, conversationId),
                         accessToken,
                         jsonBody
                 )
         );
-        return ResponseEntity.ok(objectMapper.readValue(responseText, GenConversationTitleResponse.class));
+        return ResponseEntity.ok(objectMapper.readValue(responseText, GenerateTitleResponse.class));
     }
 
     @SneakyThrows
     @Override
-    public ResponseEntity<GetConversationContentResponse> getConversationContent(String accessToken, String conversationId) {
+    public ResponseEntity<String> getConversationContent(String accessToken, String conversationId) {
         var responseText = (String) js.executeScript(
                 getGetScript(
                         String.format(Constant.GET_CONVERSATION_CONTENT_URL, conversationId),
                         accessToken
                 )
         );
-        return ResponseEntity.ok(objectMapper.readValue(responseText, GetConversationContentResponse.class));
+        return ResponseEntity.ok(responseText);
     }
 
     @SneakyThrows
@@ -188,7 +154,7 @@ public class ConversationServiceImpl implements ConversationService {
         return """
                 var xhr = new XMLHttpRequest();
                 xhr.open('GET', '%s', false);
-                xhr.setRequestHeader('Authorization', '%s');
+                xhr.setRequestHeader('Authorization', 'Bearer %s');
                 xhr.send();
                 return xhr.responseText;
                 """.formatted(url, accessToken);
@@ -200,24 +166,29 @@ public class ConversationServiceImpl implements ConversationService {
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', '%s', true);
                 xhr.setRequestHeader('Accept', 'text/event-stream');
-                xhr.setRequestHeader('Authorization', '%s');
+                xhr.setRequestHeader('Authorization', 'Bearer %s');
                 xhr.setRequestHeader('Content-Type', 'application/json');
                 xhr.onreadystatechange = function() {
                     if (xhr.readyState === 3 && xhr.status === 200) {
                         window.postMessage(xhr.responseText);
                     } else if (xhr.status === 429) {
                         window.postMessage("429");
+                    } if (xhr.readyState === 4) {
+
                     }
-                }
+                };
                 xhr.send('%s');
                 """.formatted(url, accessToken, jsonString);
     }
 
     private String getCallbackScriptForStartConversation() {
         return """
-                var callback = arguments[arguments.length - 1];
-                var handleFunction = function(event) {
-                    callback(event.data);
+                const callback = arguments[arguments.length - 1];
+                const handleFunction = function(event) {
+                    const list = event.data.split('\\n\\n');
+                    const ignoredEmpty = list.pop();
+                    const data = list.pop();
+                    callback(data.substring(6));
                 };
                 window.removeEventListener('message', handleFunction);
                 window.addEventListener('message', handleFunction);
@@ -228,7 +199,7 @@ public class ConversationServiceImpl implements ConversationService {
         return """
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', '%s', false);
-                xhr.setRequestHeader('Authorization', '%s');
+                xhr.setRequestHeader('Authorization', 'Bearer %s');
                 xhr.setRequestHeader('Content-Type', 'application/json');
                 xhr.send('%s');
                 return xhr.responseText;
@@ -239,7 +210,7 @@ public class ConversationServiceImpl implements ConversationService {
         return """
                 var xhr = new XMLHttpRequest();
                 xhr.open('PATCH', '%s', false);
-                xhr.setRequestHeader('Authorization', '%s');
+                xhr.setRequestHeader('Authorization', 'Bearer %s');
                 xhr.setRequestHeader('Content-Type', 'application/json');
                 xhr.send('%s');
                 return xhr.responseText;

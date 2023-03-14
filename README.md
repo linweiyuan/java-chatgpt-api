@@ -1,10 +1,11 @@
 # chatgpt-api
 
-Unofficial API in Java.
+Unofficial API in Java (bypassing Cloudflare v2 challenge CAPTCHA
+using [undetected_chromedriver](https://github.com/ultrafunkamsterdam/undetected-chromedriver)).
 
-### env
+### Environment variables
 
-| key               | value      | remark                                                                                                             |
-|-------------------|------------|--------------------------------------------------------------------------------------------------------------------|
-| ~~SESSION_TOKEN~~ | ~~eyJxxx~~ | ~~__Secure-next-auth.session-token~~                                                                               |
-| WEB_DRIVER_URL    | http://xxx | you can get it from here: [undetected-chromedriver](https://github.com/ultrafunkamsterdam/undetected-chromedriver) |
+| key            | value            | remark                                         |
+|----------------|------------------|------------------------------------------------|
+| WEB_DRIVER_URL | http://host:9515 | The undetected chrome driver.                  |
+| PROXY_SERVER   | host:port        | 127.0.0.1:12345 / **socks5**://127.0.0.1:12345 |

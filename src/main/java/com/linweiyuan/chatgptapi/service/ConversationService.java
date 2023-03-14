@@ -5,37 +5,34 @@ import org.springframework.http.ResponseEntity;
 import reactor.core.publisher.Flux;
 
 public interface ConversationService {
-    ResponseEntity<GetConversationsResponse> getConversations(String accessToken, int offset, int limit);
+    ResponseEntity<GetConversationsResponse> getConversations(String authorization, int offset, int limit);
 
-    Flux<StartConversationResponse> startConversation(
-            String accessToken,
-            StartConversationRequest startConversationRequest
-    );
+    Flux<String> startConversation(String authorization, ConversationRequest conversationRequest);
 
-    ResponseEntity<GenConversationTitleResponse> genConversationTitle(
-            String accessToken,
+    ResponseEntity<GenerateTitleResponse> genConversationTitle(
+            String authorization,
             String conversationId,
-            GenConversationTitleRequest genConversationTitleRequest
+            GenerateTitleRequest generateTitleRequest
     );
 
-    ResponseEntity<GetConversationContentResponse> getConversationContent(
-            String accessToken,
+    ResponseEntity<String> getConversationContent(
+            String authorization,
             String conversationId
     );
 
     ResponseEntity<Boolean> updateConversation(
-            String accessToken,
+            String authorization,
             String conversationId,
             UpdateConversationRequest updateConversationRequest
     );
 
     ResponseEntity<Boolean> clearConversations(
-            String accessToken,
+            String authorization,
             UpdateConversationRequest updateConversationRequest
     );
 
     ResponseEntity<String> feedbackMessage(
-            String accessToken,
+            String authorization,
             FeedbackRequest feedbackRequest
     );
 }

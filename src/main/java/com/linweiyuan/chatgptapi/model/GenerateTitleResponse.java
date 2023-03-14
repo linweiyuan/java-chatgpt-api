@@ -1,6 +1,6 @@
 package com.linweiyuan.chatgptapi.model;
 
-public record GenConversationTitleResponse(
+public record GenerateTitleResponse(
         String title,
         String message
 ) {

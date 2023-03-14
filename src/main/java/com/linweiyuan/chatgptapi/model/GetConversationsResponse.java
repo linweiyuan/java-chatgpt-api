@@ -1,9 +1,9 @@
 package com.linweiyuan.chatgptapi.model;
 
-import java.util.Collection;
+import java.util.List;
 
 public record GetConversationsResponse(
-        Collection<GetConversationsResponseItem> items,
+        List<GetConversationsResponseItem> items,
 
         int total,
         int limit,

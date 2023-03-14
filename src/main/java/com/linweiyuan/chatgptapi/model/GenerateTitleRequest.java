@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record GenerateTitleRequest(
         @JsonProperty("message_id")
-        String messageId
+        String messageId,
+        String model
 ) {
 }
