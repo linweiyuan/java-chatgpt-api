@@ -51,13 +51,7 @@ public class ConversationServiceImpl implements ConversationService {
                 while (true) {
                     try {
                         var eventData = (String) js.executeAsyncScript(getCallbackScriptForStartConversation());
-                        if (eventData.equals("429")) {
-                            fluxSink.next(eventData);
-                            fluxSink.complete();
-                            break;
-                        }
-
-                        if (eventData.equals("[DONE]")) {
+                        if (eventData.equals("429") || eventData.equals("[DONE]")) {
                             fluxSink.next(eventData);
                             fluxSink.complete();
                             break;
@@ -152,7 +146,7 @@ public class ConversationServiceImpl implements ConversationService {
 
     private String getGetScript(String url, String accessToken) {
         return """
-                var xhr = new XMLHttpRequest();
+                const xhr = new XMLHttpRequest();
                 xhr.open('GET', '%s', false);
                 xhr.setRequestHeader('Authorization', 'Bearer %s');
                 xhr.send();
@@ -163,7 +157,7 @@ public class ConversationServiceImpl implements ConversationService {
     @SuppressWarnings("SameParameterValue")
     private String getPostScriptForStartConversation(String url, String accessToken, String jsonString) {
         return """
-                var xhr = new XMLHttpRequest();
+                const xhr = new XMLHttpRequest();
                 xhr.open('POST', '%s', true);
                 xhr.setRequestHeader('Accept', 'text/event-stream');
                 xhr.setRequestHeader('Authorization', 'Bearer %s');
@@ -183,21 +177,25 @@ public class ConversationServiceImpl implements ConversationService {
 
     private String getCallbackScriptForStartConversation() {
         return """
-                const callback = arguments[arguments.length - 1];
-                const handleFunction = function(event) {
-                    const list = event.data.split('\\n\\n');
-                    const ignoredEmpty = list.pop();
-                    const data = list.pop();
-                    callback(data.substring(6));
-                };
-                window.removeEventListener('message', handleFunction);
-                window.addEventListener('message', handleFunction);
+               const callback = arguments[arguments.length - 1];
+               const handleFunction = function(event) {
+                   const list = event.data.split('\\n\\n');
+                   list.pop();
+                   const eventData = list.pop();
+                   if (eventData.startsWith('event')) {
+                       callback(eventData.substring(55));
+                   } else {
+                       callback(eventData.substring(6));
+                   }
+               };
+               window.removeEventListener('message', handleFunction);
+               window.addEventListener('message', handleFunction);
                 """;
     }
 
     private String getPostScript(String url, String accessToken, String jsonBody) {
         return """
-                var xhr = new XMLHttpRequest();
+                const xhr = new XMLHttpRequest();
                 xhr.open('POST', '%s', false);
                 xhr.setRequestHeader('Authorization', 'Bearer %s');
                 xhr.setRequestHeader('Content-Type', 'application/json');
@@ -208,7 +206,7 @@ public class ConversationServiceImpl implements ConversationService {
 
     private String getPatchScript(String url, String accessToken, String jsonBody) {
         return """
-                var xhr = new XMLHttpRequest();
+                const xhr = new XMLHttpRequest();
                 xhr.open('PATCH', '%s', false);
                 xhr.setRequestHeader('Authorization', 'Bearer %s');
                 xhr.setRequestHeader('Content-Type', 'application/json');

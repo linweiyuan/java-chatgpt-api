@@ -39,7 +39,7 @@ public class PreCheckInterceptor implements HandlerInterceptor {
 
         try {
             var status = (Long) ((JavascriptExecutor) webDriver).executeScript("""
-                    var xhr = new XMLHttpRequest();
+                    const xhr = new XMLHttpRequest();
                     xhr.open('GET', '%s', false);
                     xhr.send();
                     return xhr.status;
