@@ -1,0 +1,15 @@
+# the whole image is too big, so mount to jdk image directly
+
+services:
+  chatgptapi:
+    container_name: chatgptapi
+    image: openjdk:17-alpine
+    ports:
+      - 8080:8080
+    volumes:
+      - ./build/libs/chatgptapi-1.0.0.jar:/app.jar
+    environment:
+      - WEB_DRIVER_URL=http://172.17.0.1:9515
+      - PROXY_SERVER=socks5://172.17.0.1:20170
+    command: java -Xms64m -Xmx64m -jar /app.jar
+    restart: unless-stopped
