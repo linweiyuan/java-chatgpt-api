@@ -27,11 +27,6 @@ public class WebDriverConfig {
         chromeOptions.addArguments("--disable-gpu");
         chromeOptions.addArguments("--headless=new");
 
-        var proxyServer = System.getenv("HTTP_PROXY_SERVER");
-        if (proxyServer != null) {
-            chromeOptions.addArguments("--proxy-server=" + proxyServer);
-        }
-
         var webDriver = new RemoteWebDriver(new URL(System.getenv("CHATGPT_PROXY_SERVER")), chromeOptions);
         webDriver.get(Constant.CHATGPT_URL);
 
