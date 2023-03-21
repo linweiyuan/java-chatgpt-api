@@ -1,6 +1,8 @@
 package com.linweiyuan.chatgptapi.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.linweiyuan.chatgptapi.enums.ErrorEnum;
+import com.linweiyuan.chatgptapi.exception.ConversationException;
 import com.linweiyuan.chatgptapi.misc.Constant;
 import com.linweiyuan.chatgptapi.model.*;
 import com.linweiyuan.chatgptapi.service.ConversationService;
@@ -30,12 +32,17 @@ public class ConversationServiceImpl implements ConversationService {
     @SneakyThrows
     @Override
     public ResponseEntity<GetConversationsResponse> getConversations(String accessToken, int offset, int limit) {
-        var responseText = (String) js.executeScript(
+        var responseText = (String) js.executeAsyncScript(
                 getGetScript(
                         String.format(Constant.GET_CONVERSATIONS_URL, offset, limit),
-                        accessToken
+                        accessToken,
+                        Constant.ERROR_MESSAGE_GET_CONVERSATIONS
                 )
         );
+        if (Constant.ERROR_MESSAGE_GET_CONVERSATIONS.equals(responseText)) {
+            throw new ConversationException(ErrorEnum.GET_CONVERSATIONS_ERROR);
+        }
+
         return ResponseEntity.ok(objectMapper.readValue(responseText, GetConversationsResponse.class));
     }
 
@@ -76,11 +83,12 @@ public class ConversationServiceImpl implements ConversationService {
             GenerateTitleRequest generateTitleRequest
     ) {
         var jsonBody = objectMapper.writeValueAsString(generateTitleRequest);
-        var responseText = (String) js.executeScript(
+        var responseText = (String) js.executeAsyncScript(
                 getPostScript(
                         String.format(Constant.GENERATE_TITLE_URL, conversationId),
                         accessToken,
-                        jsonBody
+                        jsonBody,
+                        Constant.ERROR_MESSAGE_GENERATE_TITLE
                 )
         );
         return ResponseEntity.ok(objectMapper.readValue(responseText, GenerateTitleResponse.class));
@@ -89,10 +97,11 @@ public class ConversationServiceImpl implements ConversationService {
     @SneakyThrows
     @Override
     public ResponseEntity<String> getConversationContent(String accessToken, String conversationId) {
-        var responseText = (String) js.executeScript(
+        var responseText = (String) js.executeAsyncScript(
                 getGetScript(
                         String.format(Constant.GET_CONVERSATION_CONTENT_URL, conversationId),
-                        accessToken
+                        accessToken,
+                        Constant.ERROR_MESSAGE_GET_CONTENT
                 )
         );
         return ResponseEntity.ok(responseText);
@@ -106,11 +115,12 @@ public class ConversationServiceImpl implements ConversationService {
             UpdateConversationRequest updateConversationRequest
     ) {
         var jsonBody = objectMapper.writeValueAsString(updateConversationRequest);
-        var responseText = (String) js.executeScript(
+        var responseText = (String) js.executeAsyncScript(
                 getPatchScript(
                         String.format(Constant.UPDATE_CONVERSATION_URL, conversationId),
                         accessToken,
-                        jsonBody
+                        jsonBody,
+                        Constant.ERROR_MESSAGE_UPDATE_CONVERSATION
                 )
         );
         return ResponseEntity.ok((Boolean) objectMapper.readValue(responseText, Map.class).get("success"));
@@ -120,11 +130,12 @@ public class ConversationServiceImpl implements ConversationService {
     @Override
     public ResponseEntity<Boolean> clearConversations(String accessToken, UpdateConversationRequest updateConversationRequest) {
         var jsonBody = objectMapper.writeValueAsString(updateConversationRequest);
-        var responseText = (String) js.executeScript(
+        var responseText = (String) js.executeAsyncScript(
                 getPatchScript(
                         Constant.CLEAR_CONVERSATIONS_URL,
                         accessToken,
-                        jsonBody
+                        jsonBody,
+                        Constant.ERROR_MESSAGE_CLEAR_CONVERSATIONS
                 )
         );
         return ResponseEntity.ok((Boolean) objectMapper.readValue(responseText, Map.class).get("success"));
@@ -134,24 +145,37 @@ public class ConversationServiceImpl implements ConversationService {
     @Override
     public ResponseEntity<String> feedbackMessage(String accessToken, FeedbackRequest feedbackRequest) {
         var jsonBody = objectMapper.writeValueAsString(feedbackRequest);
-        var responseText = (String) js.executeScript(
+        var responseText = (String) js.executeAsyncScript(
                 getPostScript(
                         Constant.FEEDBACK_MESSAGE_URL,
                         accessToken,
-                        jsonBody
+                        jsonBody,
+                        Constant.ERROR_MESSAGE_FEEDBACK_MESSAGE
                 )
         );
         return ResponseEntity.ok((String) objectMapper.readValue(responseText, Map.class).get("rating"));
     }
 
-    private String getGetScript(String url, String accessToken) {
+    private String getGetScript(String url, String accessToken, String errorMessage) {
         return """
-                const xhr = new XMLHttpRequest();
-                xhr.open('GET', '%s', false);
-                xhr.setRequestHeader('Authorization', 'Bearer %s');
-                xhr.send();
-                return xhr.responseText;
-                """.formatted(url, accessToken);
+                fetch('%s', {
+                    headers: {
+                        'Authorization': '%s'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('%s');
+                    }
+                    return response.text();
+                })
+                .then(text => {
+                    arguments[0](text);
+                })
+                .catch(err => {
+                    arguments[0](err.message);
+                });
+                """.formatted(url, accessToken, errorMessage);
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -177,41 +201,69 @@ public class ConversationServiceImpl implements ConversationService {
 
     private String getCallbackScriptForStartConversation() {
         return """
-               const callback = arguments[arguments.length - 1];
-               const handleFunction = function(event) {
-                   const list = event.data.split('\\n\\n');
-                   list.pop();
-                   const eventData = list.pop();
-                   if (eventData.startsWith('event')) {
-                       callback(eventData.substring(55));
-                   } else {
-                       callback(eventData.substring(6));
-                   }
-               };
-               window.removeEventListener('message', handleFunction);
-               window.addEventListener('message', handleFunction);
-                """;
+                const callback = arguments[0];
+                const handleFunction = function(event) {
+                    const list = event.data.split('\\n\\n');
+                    list.pop();
+                    const eventData = list.pop();
+                    if (eventData.startsWith('event')) {
+                        callback(eventData.substring(55));
+                    } else {
+                        callback(eventData.substring(6));
+                    }
+                };
+                window.removeEventListener('message', handleFunction);
+                window.addEventListener('message', handleFunction);
+                 """;
     }
 
-    private String getPostScript(String url, String accessToken, String jsonBody) {
+    private String getPostScript(String url, String accessToken, String jsonBody, String errorMessage) {
         return """
-                const xhr = new XMLHttpRequest();
-                xhr.open('POST', '%s', false);
-                xhr.setRequestHeader('Authorization', 'Bearer %s');
-                xhr.setRequestHeader('Content-Type', 'application/json');
-                xhr.send('%s');
-                return xhr.responseText;
-                """.formatted(url, accessToken, jsonBody);
+                fetch('%s', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': '%s',
+                        'Content-Type': 'application/json'
+                    },
+                    body: '%s'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('%s');
+                    }
+                    return response.text();
+                })
+                .then(text => {
+                    arguments[0](text);
+                })
+                .catch(err => {
+                    arguments[0](err.message);
+                });
+                """.formatted(url, accessToken, jsonBody, errorMessage);
     }
 
-    private String getPatchScript(String url, String accessToken, String jsonBody) {
+    private String getPatchScript(String url, String accessToken, String jsonBody, String errorMessage) {
         return """
-                const xhr = new XMLHttpRequest();
-                xhr.open('PATCH', '%s', false);
-                xhr.setRequestHeader('Authorization', 'Bearer %s');
-                xhr.setRequestHeader('Content-Type', 'application/json');
-                xhr.send('%s');
-                return xhr.responseText;
-                """.formatted(url, accessToken, jsonBody);
+                fetch('%s', {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': '%s',
+                        'Content-Type': 'application/json'
+                    },
+                    body: '%s'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('%s');
+                    }
+                    return response.text();
+                })
+                .then(text => {
+                    arguments[0](text);
+                })
+                .catch(err => {
+                    arguments[0](err.message);
+                });
+                """.formatted(url, accessToken, jsonBody, errorMessage);
     }
 }

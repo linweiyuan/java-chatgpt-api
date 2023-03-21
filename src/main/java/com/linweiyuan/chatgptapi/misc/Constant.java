@@ -17,4 +17,11 @@ public class Constant {
 
     public static final String DEFAULT_OFFSET = "0";
     public static final String DEFAULT_LIMIT = "20";
+
+    public static final String ERROR_MESSAGE_GET_CONVERSATIONS = "Failed to get conversations.";
+    public static final String ERROR_MESSAGE_GENERATE_TITLE = "Failed to generate title.";
+    public static final String ERROR_MESSAGE_GET_CONTENT = "Failed to get content.";
+    public static final String ERROR_MESSAGE_UPDATE_CONVERSATION = "Failed to update conversation.";
+    public static final String ERROR_MESSAGE_CLEAR_CONVERSATIONS = "Failed to clear conversations.";
+    public static final String ERROR_MESSAGE_FEEDBACK_MESSAGE = "Failed to add feedback.";
 }
