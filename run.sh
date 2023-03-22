@@ -2,4 +2,4 @@
 
 docker-compose up -d
 
-docker-compose logs -f chatgptapi
+docker-compose logs -f java-chatgpt-api
