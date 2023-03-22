@@ -1,5 +1,6 @@
 package com.linweiyuan.chatgptapi.config;
 
+import com.linweiyuan.chatgptapi.misc.CaptchaUtil;
 import com.linweiyuan.chatgptapi.misc.Constant;
 import lombok.SneakyThrows;
 import org.openqa.selenium.WebDriver;
@@ -29,7 +30,7 @@ public class WebDriverConfig {
 
         var webDriver = new RemoteWebDriver(new URL(System.getenv("CHATGPT_PROXY_SERVER")), chromeOptions);
         webDriver.get(Constant.CHATGPT_URL);
-
+        CaptchaUtil.handleCaptcha(webDriver);
         webDriver.manage().timeouts().scriptTimeout(Duration.ofSeconds(Constant.SCRIPT_EXECUTION_TIMEOUT));
 
         return webDriver;
