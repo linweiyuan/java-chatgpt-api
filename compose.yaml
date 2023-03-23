@@ -1,16 +1,12 @@
-# the whole image is too big, so mount to jdk image directly
-
 services:
   java-chatgpt-api:
+    build: .
     container_name: java-chatgpt-api
-    image: openjdk:17-alpine
+    image: linweiyuan/java-chatgpt-api
     ports:
       - 8080:8080
-    volumes:
-      - ./build/libs/java-chatgpt-api-1.0.0.jar:/app.jar
     environment:
       - CHATGPT_PROXY_SERVER=http://chatgpt-proxy-server:9515
-    command: java -Xms64m -Xmx64m -jar /app.jar
     depends_on:
       - chatgpt-proxy-server
     restart: unless-stopped
