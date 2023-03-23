@@ -10,14 +10,18 @@
 #COPY ${DEPENDENCY}/BOOT-INF/classes /app
 #ENTRYPOINT ["java","-cp","app:app/lib/*","com.linweiyuan.chatgptapi.ChatgptapiApplication"]
 
-
 # java -Djarmode=layertools -jar build/libs/java-chatgpt-api-1.0.0.jar extract --destination build/libs/extracted
+
+#FROM eclipse-temurin:17-jre-alpine
+#VOLUME /tmp
+#ARG EXTRACTED=build/libs/extracted
+#COPY ${EXTRACTED}/dependencies/ ./
+#COPY ${EXTRACTED}/spring-boot-loader/ ./
+#COPY ${EXTRACTED}/snapshot-dependencies/ ./
+#COPY ${EXTRACTED}/application/ ./
+#ENTRYPOINT ["java","org.springframework.boot.loader.JarLauncher"]
 
 FROM eclipse-temurin:17-jre-alpine
 VOLUME /tmp
-ARG EXTRACTED=build/libs/extracted
-COPY ${EXTRACTED}/dependencies/ ./
-COPY ${EXTRACTED}/spring-boot-loader/ ./
-COPY ${EXTRACTED}/snapshot-dependencies/ ./
-COPY ${EXTRACTED}/application/ ./
-ENTRYPOINT ["java","org.springframework.boot.loader.JarLauncher"]
+COPY build/libs/java-chatgpt-api-1.0.0.jar app.jar
+ENTRYPOINT ["java", "-Xms64m", "-Xmx64m", "-jar", "/app.jar"]
