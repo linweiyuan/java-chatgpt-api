@@ -7,7 +7,7 @@ import org.springframework.boot.ansi.AnsiOutput;
 @Slf4j
 public class LogUtil {
     public static void info(String msg) {
-        log.info(AnsiOutput.toString(AnsiColor.BLUE, msg, AnsiColor.DEFAULT));
+        log.info(AnsiOutput.toString(AnsiColor.GREEN, msg, AnsiColor.DEFAULT));
     }
 
     public static void warn(String msg) {

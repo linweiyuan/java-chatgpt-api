@@ -7,6 +7,7 @@ services:
       - 8080:8080
     environment:
       - CHATGPT_PROXY_SERVER=http://chatgpt-proxy-server:9515
+      - SPRING_OUTPUT_ANSI_ENABLED=ALWAYS
     depends_on:
       - chatgpt-proxy-server
     restart: unless-stopped
