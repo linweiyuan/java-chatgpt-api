@@ -26,6 +26,8 @@ public class WebDriverConfig {
 
         chromeOptions.addArguments("--no-sandbox");
         chromeOptions.addArguments("--disable-gpu");
+        chromeOptions.addArguments("--disable-dev-shm-usage");
+        chromeOptions.addArguments("--disable-blink-features=AutomationControlled");
         chromeOptions.addArguments("--headless=new");
 
         var webDriver = new RemoteWebDriver(new URL(System.getenv("CHATGPT_PROXY_SERVER")), chromeOptions);

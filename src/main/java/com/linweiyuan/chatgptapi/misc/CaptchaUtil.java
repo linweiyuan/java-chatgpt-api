@@ -1,24 +1,28 @@
 package com.linweiyuan.chatgptapi.misc;
 
-import lombok.extern.slf4j.Slf4j;
-import org.openqa.selenium.*;
+import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.TimeoutException;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.FluentWait;
 
 import java.time.Duration;
 
-@Slf4j
+import static com.linweiyuan.chatgptapi.misc.LogUtil.*;
+
 public class CaptchaUtil {
     public static void handleCaptcha(WebDriver webDriver) {
         try {
             var captchaDetected = CaptchaUtil.haveCaptcha(webDriver);
             if (!captchaDetected) {
-                log.info("no captcha.");
+                info("No captcha");
             } else {
-                log.info("captcha is detected!!!");
+                warn("Captcha is detected");
                 tryToClickCaptchaTextBox(webDriver);
             }
         } catch (Exception e) {
-            log.error("Failed to handle captcha: {}", e.toString());
+            error("Failed to handle captcha: " + e);
+            System.exit(1);
         }
     }
 
@@ -27,7 +31,7 @@ public class CaptchaUtil {
         try {
             var welcomeElement = wait.until(driver -> driver.findElement(By.className("mb-2")));
             var welcomeText = welcomeElement.getText();
-            log.info("welcome text: {}", welcomeText);
+            info(welcomeText);
             return !"Welcome to ChatGPT".equals(welcomeText);
         } catch (Exception e) {
             return true;
@@ -35,12 +39,12 @@ public class CaptchaUtil {
     }
 
     private static void tryToClickCaptchaTextBox(WebDriver webDriver) {
-        log.info("try to click captcha");
+        info("Try to click captcha");
         webDriver = webDriver.switchTo().frame(0);
         var wait = newWait(webDriver);
-        WebElement checkbox = wait.until(driver -> driver.findElement(By.cssSelector("input[type=checkbox]")));
+        var checkbox = wait.until(driver -> driver.findElement(By.cssSelector("input[type=checkbox]")));
         checkbox.click();
-        log.info("captcha is clicked.");
+        info("Captcha is clicked!");
     }
 
     private static FluentWait<WebDriver> newWait(WebDriver webDriver) {

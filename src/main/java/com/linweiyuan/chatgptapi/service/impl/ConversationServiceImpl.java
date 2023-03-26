@@ -7,7 +7,6 @@ import com.linweiyuan.chatgptapi.misc.Constant;
 import com.linweiyuan.chatgptapi.model.*;
 import com.linweiyuan.chatgptapi.service.ConversationService;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +16,6 @@ import reactor.core.publisher.Flux;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
-@Slf4j
 @Service
 public class ConversationServiceImpl implements ConversationService {
     private final JavascriptExecutor js;
