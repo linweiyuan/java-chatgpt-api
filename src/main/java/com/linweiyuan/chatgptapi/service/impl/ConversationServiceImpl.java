@@ -182,7 +182,7 @@ public class ConversationServiceImpl implements ConversationService {
                 const xhr = new XMLHttpRequest();
                 xhr.open('POST', '%s', true);
                 xhr.setRequestHeader('Accept', 'text/event-stream');
-                xhr.setRequestHeader('Authorization', 'Bearer %s');
+                xhr.setRequestHeader('Authorization', '%s');
                 xhr.setRequestHeader('Content-Type', 'application/json');
                 xhr.onreadystatechange = function() {
                     if (xhr.readyState === xhr.LOADING && xhr.status === 200) {
