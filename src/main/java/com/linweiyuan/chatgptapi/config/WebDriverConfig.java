@@ -11,7 +11,6 @@ import org.springframework.context.annotation.Configuration;
 
 import java.net.URL;
 import java.time.Duration;
-import java.util.Collections;
 
 @Configuration
 public class WebDriverConfig {
@@ -20,15 +19,16 @@ public class WebDriverConfig {
     WebDriver webDriver() {
         var chromeOptions = new ChromeOptions();
 
-        // fake real browser
-        chromeOptions.addArguments("--disable-blink-features=AutomationControlled");
-        chromeOptions.setExperimentalOption("excludeSwitches", Collections.singletonList("enable-automation"));
-
         chromeOptions.addArguments("--no-sandbox");
         chromeOptions.addArguments("--disable-gpu");
         chromeOptions.addArguments("--disable-dev-shm-usage");
         chromeOptions.addArguments("--disable-blink-features=AutomationControlled");
         chromeOptions.addArguments("--headless=new");
+
+        var networkProxyServer = System.getenv("NETWORK_PROXY_SERVER");
+        if (networkProxyServer != null) {
+            chromeOptions.addArguments("--proxy-server=" + networkProxyServer);
+        }
 
         var webDriver = new RemoteWebDriver(new URL(System.getenv("CHATGPT_PROXY_SERVER")), chromeOptions);
         webDriver.get(Constant.CHATGPT_URL);
