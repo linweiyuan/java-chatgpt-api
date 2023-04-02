@@ -49,8 +49,8 @@ public class CaptchaUtil {
 
     private static FluentWait<WebDriver> newWait(WebDriver webDriver) {
         return new FluentWait<>(webDriver)
-                .withTimeout(Duration.ofSeconds(10))
-                .pollingEvery(Duration.ofSeconds(2))
+                .withTimeout(Duration.ofSeconds(Constant.CHECK_CAPTCHA_TIMEOUT))
+                .pollingEvery(Duration.ofSeconds(Constant.CHECK_CAPTCHA_INTERVAL))
                 .ignoring(NoSuchElementException.class)
                 .ignoring(TimeoutException.class);
     }

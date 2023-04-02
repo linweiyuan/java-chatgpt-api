@@ -15,6 +15,9 @@ public class Constant {
 
     public static final int SCRIPT_EXECUTION_TIMEOUT = 10;
 
+    public static final int CHECK_CAPTCHA_TIMEOUT = 20;
+    public static final int CHECK_CAPTCHA_INTERVAL = 2;
+
     public static final String DEFAULT_OFFSET = "0";
     public static final String DEFAULT_LIMIT = "20";
 
