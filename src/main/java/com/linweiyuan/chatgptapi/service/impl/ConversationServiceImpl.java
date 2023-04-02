@@ -156,112 +156,112 @@ public class ConversationServiceImpl implements ConversationService {
 
     private String getGetScript(String url, String accessToken, String errorMessage) {
         return """
-                fetch('%s', {
-                    headers: {
-                        'Authorization': '%s'
-                    }
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('%s');
-                    }
-                    return response.text();
-                })
-                .then(text => {
-                    arguments[0](text);
-                })
-                .catch(err => {
-                    arguments[0](err.message);
-                });
-                """.formatted(url, accessToken, errorMessage);
+            fetch('%s', {
+                headers: {
+                    'Authorization': '%s'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('%s');
+                }
+                return response.text();
+            })
+            .then(text => {
+                arguments[0](text);
+            })
+            .catch(err => {
+                arguments[0](err.message);
+            });
+        """.formatted(url, accessToken, errorMessage);
     }
 
     @SuppressWarnings("SameParameterValue")
     private String getPostScriptForStartConversation(String url, String accessToken, String jsonString) {
         return """
-                const xhr = new XMLHttpRequest();
-                xhr.open('POST', '%s', true);
-                xhr.setRequestHeader('Accept', 'text/event-stream');
-                xhr.setRequestHeader('Authorization', '%s');
-                xhr.setRequestHeader('Content-Type', 'application/json');
-                xhr.onreadystatechange = function() {
-                    if (xhr.readyState === xhr.LOADING && xhr.status === 200) {
-                        window.postMessage(xhr.responseText);
-                    } else if (xhr.status === 429) {
-                        window.postMessage("429");
-                    } if (xhr.readyState === xhr.DONE) {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '%s', true);
+            xhr.setRequestHeader('Accept', 'text/event-stream');
+            xhr.setRequestHeader('Authorization', '%s');
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === xhr.LOADING && xhr.status === 200) {
+                    window.postMessage(xhr.responseText);
+                } else if (xhr.status === 429) {
+                    window.postMessage("429");
+                } if (xhr.readyState === xhr.DONE) {
 
-                    }
-                };
-                xhr.send('%s');
-                """.formatted(url, accessToken, jsonString);
+                }
+            };
+            xhr.send('%s');
+        """.formatted(url, accessToken, jsonString);
     }
 
     private String getCallbackScriptForStartConversation() {
         return """
-                const callback = arguments[0];
-                const handleFunction = function(event) {
-                    const list = event.data.split('\\n\\n');
-                    list.pop();
-                    const eventData = list.pop();
-                    if (eventData.startsWith('event')) {
-                        callback(eventData.substring(55));
-                    } else {
-                        callback(eventData.substring(6));
-                    }
-                };
-                window.removeEventListener('message', handleFunction);
-                window.addEventListener('message', handleFunction);
-                 """;
+            const callback = arguments[0];
+            const handleFunction = function(event) {
+                const list = event.data.split('\\n\\n');
+                list.pop();
+                const eventData = list.pop();
+                if (eventData.startsWith('event')) {
+                    callback(eventData.substring(55));
+                } else {
+                    callback(eventData.substring(6));
+                }
+            };
+            window.removeEventListener('message', handleFunction);
+            window.addEventListener('message', handleFunction);
+         """;
     }
 
     private String getPostScript(String url, String accessToken, String jsonBody, String errorMessage) {
         return """
-                fetch('%s', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': '%s',
-                        'Content-Type': 'application/json'
-                    },
-                    body: '%s'
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('%s');
-                    }
-                    return response.text();
-                })
-                .then(text => {
-                    arguments[0](text);
-                })
-                .catch(err => {
-                    arguments[0](err.message);
-                });
-                """.formatted(url, accessToken, jsonBody, errorMessage);
+            fetch('%s', {
+                method: 'POST',
+                headers: {
+                    'Authorization': '%s',
+                    'Content-Type': 'application/json'
+                },
+                body: '%s'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('%s');
+                }
+                return response.text();
+            })
+            .then(text => {
+                arguments[0](text);
+            })
+            .catch(err => {
+                arguments[0](err.message);
+            });
+        """.formatted(url, accessToken, jsonBody, errorMessage);
     }
 
     private String getPatchScript(String url, String accessToken, String jsonBody, String errorMessage) {
         return """
-                fetch('%s', {
-                    method: 'PATCH',
-                    headers: {
-                        'Authorization': '%s',
-                        'Content-Type': 'application/json'
-                    },
-                    body: '%s'
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('%s');
-                    }
-                    return response.text();
-                })
-                .then(text => {
-                    arguments[0](text);
-                })
-                .catch(err => {
-                    arguments[0](err.message);
-                });
-                """.formatted(url, accessToken, jsonBody, errorMessage);
+            fetch('%s', {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': '%s',
+                    'Content-Type': 'application/json'
+                },
+                body: '%s'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('%s');
+                }
+                return response.text();
+            })
+            .then(text => {
+                arguments[0](text);
+            })
+            .catch(err => {
+                arguments[0](err.message);
+            });
+        """.formatted(url, accessToken, jsonBody, errorMessage);
     }
 }
