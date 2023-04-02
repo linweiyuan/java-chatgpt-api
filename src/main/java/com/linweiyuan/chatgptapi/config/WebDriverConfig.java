@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 
 import java.net.URL;
 import java.time.Duration;
+import java.util.List;
 
 @Configuration
 public class WebDriverConfig {
@@ -24,6 +25,7 @@ public class WebDriverConfig {
         chromeOptions.addArguments("--disable-dev-shm-usage");
         chromeOptions.addArguments("--disable-blink-features=AutomationControlled");
         chromeOptions.addArguments("--headless=new");
+        chromeOptions.setExperimentalOption("excludeSwitches", List.of("enable-automation"));
 
         var networkProxyServer = System.getenv("NETWORK_PROXY_SERVER");
         if (networkProxyServer != null) {
