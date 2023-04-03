@@ -1,5 +1,7 @@
 package com.linweiyuan.chatgptapi.misc;
 
+import lombok.SneakyThrows;
+import lombok.val;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.TimeoutException;
@@ -7,6 +9,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.FluentWait;
 
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import static com.linweiyuan.chatgptapi.misc.LogUtil.*;
 
@@ -22,12 +25,16 @@ public class CaptchaUtil {
             }
         } catch (Exception e) {
             error("Failed to handle captcha: " + e);
-            System.exit(1);
+            webDriver.navigate().refresh();
         }
     }
 
     private static boolean haveCaptcha(WebDriver webDriver) {
-        var wait = newWait(webDriver);
+        var wait = new FluentWait<>(webDriver)
+                .withTimeout(Duration.ofSeconds(Constant.CHECK_WELCOME_TEXT_TIMEOUT))
+                .pollingEvery(Duration.ofSeconds(Constant.CHECK_CAPTCHA_INTERVAL))
+                .ignoring(NoSuchElementException.class)
+                .ignoring(TimeoutException.class);
         try {
             var welcomeElement = wait.until(driver -> driver.findElement(By.className("mb-2")));
             var welcomeText = welcomeElement.getText();
@@ -38,20 +45,27 @@ public class CaptchaUtil {
         }
     }
 
+    @SneakyThrows
     private static void tryToClickCaptchaTextBox(WebDriver webDriver) {
         info("Try to click captcha");
         webDriver = webDriver.switchTo().frame(0);
-        var wait = newWait(webDriver);
-        var checkbox = wait.until(driver -> driver.findElement(By.cssSelector("input[type=checkbox]")));
-        checkbox.click();
-        info("Captcha is clicked!");
-    }
-
-    private static FluentWait<WebDriver> newWait(WebDriver webDriver) {
-        return new FluentWait<>(webDriver)
+        var wait = new FluentWait<>(webDriver)
                 .withTimeout(Duration.ofSeconds(Constant.CHECK_CAPTCHA_TIMEOUT))
                 .pollingEvery(Duration.ofSeconds(Constant.CHECK_CAPTCHA_INTERVAL))
                 .ignoring(NoSuchElementException.class)
                 .ignoring(TimeoutException.class);
+        var checkbox = wait.until(driver -> driver.findElement(By.cssSelector("input[type=checkbox]")));
+        checkbox.click();
+        info("Captcha is clicked!");
+
+        TimeUnit.SECONDS.sleep(Constant.CHECK_NEXT_INTERVAL);
+
+        val title = webDriver.getTitle();
+        info(title);
+        if (title.equals("Just a moment...")) {
+            info("Still get a captcha");
+
+            tryToClickCaptchaTextBox(webDriver);
+        }
     }
 }

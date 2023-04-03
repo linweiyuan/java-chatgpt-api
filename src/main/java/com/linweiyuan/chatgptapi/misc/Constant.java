@@ -1,10 +1,8 @@
 package com.linweiyuan.chatgptapi.misc;
 
 public class Constant {
-    public static final String SERVER_URL = "https://chat.openai.com";
-    public static final String PRE_CHECK_URL = SERVER_URL + "/auth/login?next=/chat";
-    public static final String CHATGPT_URL = SERVER_URL + "/chat";
-    public static final String API_URL = SERVER_URL + "/backend-api";
+    public static final String CHATGPT_URL = "https://chat.openai.com";
+    public static final String API_URL = CHATGPT_URL + "/backend-api";
     public static final String GET_CONVERSATIONS_URL = API_URL + "/conversations?offset=%d&limit=%d";
     public static final String START_CONVERSATIONS_URL = API_URL + "/conversation";
     public static final String GENERATE_TITLE_URL = API_URL + "/conversation/gen_title/%s";
@@ -15,8 +13,10 @@ public class Constant {
 
     public static final int SCRIPT_EXECUTION_TIMEOUT = 10;
 
-    public static final int CHECK_CAPTCHA_TIMEOUT = 20;
-    public static final int CHECK_CAPTCHA_INTERVAL = 2;
+    public static final int CHECK_WELCOME_TEXT_TIMEOUT = 5;
+    public static final int CHECK_CAPTCHA_TIMEOUT = 15;
+    public static final int CHECK_CAPTCHA_INTERVAL = 1;
+    public static final int CHECK_NEXT_INTERVAL = 5;
 
     public static final String DEFAULT_OFFSET = "0";
     public static final String DEFAULT_LIMIT = "20";

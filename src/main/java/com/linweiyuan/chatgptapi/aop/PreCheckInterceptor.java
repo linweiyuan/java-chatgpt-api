@@ -47,7 +47,7 @@ public class PreCheckInterceptor implements HandlerInterceptor {
                     xhr.open('GET', '%s', false);
                     xhr.send();
                     return xhr.status;
-                    """.formatted(Constant.PRE_CHECK_URL));
+                    """.formatted(Constant.CHATGPT_URL));
 
             if (status == HttpStatus.FORBIDDEN.value()) {
                 warn("Session timeout, need to refresh");
