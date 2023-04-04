@@ -2,14 +2,14 @@ package com.linweiyuan.chatgptapi.misc;
 
 public class Constant {
     public static final String CHATGPT_URL = "https://chat.openai.com";
-    public static final String API_URL = CHATGPT_URL + "/backend-api";
-    public static final String GET_CONVERSATIONS_URL = API_URL + "/conversations?offset=%d&limit=%d";
-    public static final String START_CONVERSATIONS_URL = API_URL + "/conversation";
-    public static final String GENERATE_TITLE_URL = API_URL + "/conversation/gen_title/%s";
-    public static final String GET_CONVERSATION_CONTENT_URL = API_URL + "/conversation/%s";
-    public static final String UPDATE_CONVERSATION_URL = API_URL + "/conversation/%s";
-    public static final String CLEAR_CONVERSATIONS_URL = API_URL + "/conversations";
-    public static final String FEEDBACK_MESSAGE_URL = API_URL + "/conversation/message_feedback";
+    public static final String CHATGPT_API_URL = CHATGPT_URL + "/backend-api";
+    public static final String GET_CONVERSATIONS_URL = CHATGPT_API_URL + "/conversations?offset=%d&limit=%d";
+    public static final String START_CONVERSATIONS_URL = CHATGPT_API_URL + "/conversation";
+    public static final String GENERATE_TITLE_URL = CHATGPT_API_URL + "/conversation/gen_title/%s";
+    public static final String GET_CONVERSATION_CONTENT_URL = CHATGPT_API_URL + "/conversation/%s";
+    public static final String UPDATE_CONVERSATION_URL = CHATGPT_API_URL + "/conversation/%s";
+    public static final String CLEAR_CONVERSATIONS_URL = CHATGPT_API_URL + "/conversations";
+    public static final String FEEDBACK_MESSAGE_URL = CHATGPT_API_URL + "/conversation/message_feedback";
 
     public static final int SCRIPT_EXECUTION_TIMEOUT = 10;
 
@@ -28,4 +28,7 @@ public class Constant {
     public static final String ERROR_MESSAGE_UPDATE_CONVERSATION = "Failed to update conversation.";
     public static final String ERROR_MESSAGE_CLEAR_CONVERSATIONS = "Failed to clear conversations.";
     public static final String ERROR_MESSAGE_FEEDBACK_MESSAGE = "Failed to add feedback.";
+
+    public static final String API_URL = "https://api.openai.com/v1";
+    public static final String API_CHAT_COMPLETIONS = "/chat/completions";
 }

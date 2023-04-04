@@ -1,10 +1,10 @@
 package com.linweiyuan.chatgptapi.service;
 
-import com.linweiyuan.chatgptapi.model.*;
+import com.linweiyuan.chatgptapi.model.chatgpt.*;
 import org.springframework.http.ResponseEntity;
 import reactor.core.publisher.Flux;
 
-public interface ConversationService {
+public interface ChatGPTService {
     ResponseEntity<GetConversationsResponse> getConversations(String authorization, int offset, int limit);
 
     Flux<String> startConversation(String authorization, ConversationRequest conversationRequest);

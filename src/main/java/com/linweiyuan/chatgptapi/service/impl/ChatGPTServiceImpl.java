@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linweiyuan.chatgptapi.enums.ErrorEnum;
 import com.linweiyuan.chatgptapi.exception.ConversationException;
 import com.linweiyuan.chatgptapi.misc.Constant;
-import com.linweiyuan.chatgptapi.model.*;
-import com.linweiyuan.chatgptapi.service.ConversationService;
+import com.linweiyuan.chatgptapi.model.chatgpt.*;
+import com.linweiyuan.chatgptapi.service.ChatGPTService;
 import lombok.SneakyThrows;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
@@ -17,12 +17,12 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 
 @Service
-public class ConversationServiceImpl implements ConversationService {
+public class ChatGPTServiceImpl implements ChatGPTService {
     private final JavascriptExecutor js;
 
     private final ObjectMapper objectMapper;
 
-    public ConversationServiceImpl(WebDriver webDriver, ObjectMapper objectMapper) {
+    public ChatGPTServiceImpl(WebDriver webDriver, ObjectMapper objectMapper) {
         this.js = (JavascriptExecutor) webDriver;
         this.objectMapper = objectMapper;
     }

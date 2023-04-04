@@ -28,8 +28,10 @@ public class PreCheckInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         var method = ((HandlerMethod) handler).getMethod();
-        if (method.getDeclaringClass().getAnnotation(PreCheck.class) == null) {
-            if (method.getAnnotation(PreCheck.class) == null) {
+        var precheck = method.getDeclaringClass().getAnnotation(PreCheck.class);
+        if (precheck == null) {
+            precheck = method.getAnnotation(PreCheck.class);
+            if (precheck == null) {
                 return true;
             }
         }
@@ -39,6 +41,10 @@ public class PreCheckInterceptor implements HandlerInterceptor {
         if (request.getHeader(HttpHeaders.AUTHORIZATION) == null) {
             warn("No access token");
             return false;
+        }
+
+        if (precheck.onlyCheckAuthorization()) {
+            return true;
         }
 
         try {

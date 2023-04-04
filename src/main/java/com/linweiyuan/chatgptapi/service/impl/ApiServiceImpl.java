@@ -1,0 +1,41 @@
+package com.linweiyuan.chatgptapi.service.impl;
+
+import com.linweiyuan.chatgptapi.misc.Constant;
+import com.linweiyuan.chatgptapi.model.api.ChatCompletionsRequest;
+import com.linweiyuan.chatgptapi.service.ApiService;
+import lombok.SneakyThrows;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
+
+@Service
+public class ApiServiceImpl implements ApiService {
+    private final WebClient webClient;
+
+    public ApiServiceImpl() {
+        this.webClient = WebClient.builder()
+                .baseUrl(Constant.API_URL)
+                .build();
+    }
+
+    @SneakyThrows
+    @Override
+    public Flux<String> chatCompletions(String authorization, ChatCompletionsRequest chatCompletionsRequest) {
+        return webClient.post()
+                .uri(Constant.API_CHAT_COMPLETIONS)
+                .header(HttpHeaders.AUTHORIZATION, getAuthorizationHeader(authorization))
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(chatCompletionsRequest)
+                .retrieve()
+                .bodyToFlux(String.class);
+    }
+
+    private String getAuthorizationHeader(String authorization) {
+        if (authorization.startsWith("Bearer")) {
+            return authorization;
+        }
+        return "Bearer " + authorization;
+    }
+}

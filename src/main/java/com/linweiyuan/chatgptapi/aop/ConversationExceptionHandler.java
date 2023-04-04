@@ -1,7 +1,7 @@
 package com.linweiyuan.chatgptapi.aop;
 
 import com.linweiyuan.chatgptapi.exception.ConversationException;
-import com.linweiyuan.chatgptapi.model.ErrorMessageResponse;
+import com.linweiyuan.chatgptapi.model.chatgpt.ErrorMessageResponse;
 import org.openqa.selenium.ScriptTimeoutException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

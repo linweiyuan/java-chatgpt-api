@@ -1,4 +1,4 @@
-package com.linweiyuan.chatgptapi.model;
+package com.linweiyuan.chatgptapi.model.chatgpt;
 
 public record GenerateTitleResponse(
         String title,
