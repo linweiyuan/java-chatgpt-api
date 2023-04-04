@@ -5,6 +5,14 @@
 Unofficial API in Java (bypass Cloudflare v2 challenge CAPTCHA
 using [undetected_chromedriver](https://github.com/ultrafunkamsterdam/undetected-chromedriver)).
 
+---
+
+Also support official API (the way which using API key):
+
+- Chat completion
+
+---
+
 `compose.yaml`
 
 ```yaml
