@@ -18,7 +18,6 @@ services:
       - CHATGPT_PROXY_SERVER=http://chatgpt-proxy-server:9515
 #      - NETWORK_PROXY_SERVER=http://host:port
 #      - NETWORK_PROXY_SERVER=socks5://host:port
-      - SPRING_OUTPUT_ANSI_ENABLED=ALWAYS
     depends_on:
       - chatgpt-proxy-server
     restart: unless-stopped
