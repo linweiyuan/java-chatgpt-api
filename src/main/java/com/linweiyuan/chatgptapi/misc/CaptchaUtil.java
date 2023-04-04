@@ -6,6 +6,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.ui.FluentWait;
 
 import java.time.Duration;
@@ -23,6 +24,21 @@ public class CaptchaUtil {
                     .ignoring(TimeoutException.class);
             var errorDetails = wait.until(driver -> driver.findElement(By.className("cf-error-details")));
             LogUtil.error(errorDetails.getText());
+            return false;
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    public static boolean checkAvailability(RemoteWebDriver webDriver) {
+        try {
+            var wait = new FluentWait<>(webDriver)
+                    .withTimeout(Duration.ofSeconds(Constant.CHECK_AVAILABILITY_TIMEOUT))
+                    .pollingEvery(Duration.ofSeconds(Constant.CHECK_CAPTCHA_INTERVAL))
+                    .ignoring(NoSuchElementException.class)
+                    .ignoring(TimeoutException.class);
+            var notAvailable = wait.until(driver -> driver.findElement(By.className("text-3xl")));
+            LogUtil.error(notAvailable.getText());
             return false;
         } catch (Exception e) {
             return true;

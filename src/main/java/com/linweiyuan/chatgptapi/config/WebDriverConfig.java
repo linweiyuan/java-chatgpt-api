@@ -34,7 +34,7 @@ public class WebDriverConfig {
 
         var webDriver = new RemoteWebDriver(new URL(System.getenv("CHATGPT_PROXY_SERVER")), chromeOptions);
         webDriver.get(Constant.CHATGPT_URL);
-        if (CaptchaUtil.checkAccess(webDriver)) {
+        if (CaptchaUtil.checkAccess(webDriver) && CaptchaUtil.checkAvailability(webDriver)) {
             CaptchaUtil.handleCaptcha(webDriver);
             webDriver.manage().timeouts().scriptTimeout(Duration.ofSeconds(Constant.SCRIPT_EXECUTION_TIMEOUT));
         }
