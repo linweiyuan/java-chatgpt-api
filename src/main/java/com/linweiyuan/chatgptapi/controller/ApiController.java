@@ -5,11 +5,9 @@ import com.linweiyuan.chatgptapi.misc.Constant;
 import com.linweiyuan.chatgptapi.model.api.ChatCompletionsRequest;
 import com.linweiyuan.chatgptapi.service.ApiService;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @SuppressWarnings("unused")
 @PreCheck
@@ -27,5 +25,10 @@ public class ApiController {
             @RequestBody ChatCompletionsRequest chatCompletionsRequest
     ) {
         return apiService.chatCompletions(authorization, chatCompletionsRequest);
+    }
+
+    @GetMapping(Constant.API_CHECK_CREDIT_GRANTS)
+    public Mono<String> checkCreditGrants(@RequestHeader String authorization) {
+        return apiService.checkCreditGrants(authorization);
     }
 }

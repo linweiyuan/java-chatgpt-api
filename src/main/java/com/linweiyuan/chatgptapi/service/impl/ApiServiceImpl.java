@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Service
 public class ApiServiceImpl implements ApiService {
@@ -30,6 +31,15 @@ public class ApiServiceImpl implements ApiService {
                 .bodyValue(chatCompletionsRequest)
                 .retrieve()
                 .bodyToFlux(String.class);
+    }
+
+    @Override
+    public Mono<String> checkCreditGrants(String authorization) {
+        return webClient.get()
+                .uri(Constant.API_CHECK_CREDIT_GRANTS)
+                .header(HttpHeaders.AUTHORIZATION, getAuthorizationHeader(authorization))
+                .retrieve()
+                .bodyToMono(String.class);
     }
 
     private String getAuthorizationHeader(String authorization) {

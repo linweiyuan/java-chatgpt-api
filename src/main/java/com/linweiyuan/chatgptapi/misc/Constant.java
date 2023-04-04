@@ -16,6 +16,7 @@ public class Constant {
     public static final int CHECK_WELCOME_TEXT_TIMEOUT = 5;
     public static final int CHECK_CAPTCHA_TIMEOUT = 60;
     public static final int CHECK_ACCESS_DENIED_TIMEOUT = 3;
+    public static final int CHECK_AVAILABILITY_TIMEOUT = 3;
     public static final int CHECK_CAPTCHA_INTERVAL = 1;
     public static final int CHECK_NEXT_INTERVAL = 5;
 
@@ -29,6 +30,8 @@ public class Constant {
     public static final String ERROR_MESSAGE_CLEAR_CONVERSATIONS = "Failed to clear conversations.";
     public static final String ERROR_MESSAGE_FEEDBACK_MESSAGE = "Failed to add feedback.";
 
-    public static final String API_URL = "https://api.openai.com/v1";
-    public static final String API_CHAT_COMPLETIONS = "/chat/completions";
+    public static final String API_URL = "https://api.openai.com";
+    private static final String API_VERSION = "v1";
+    public static final String API_CHAT_COMPLETIONS = API_VERSION + "/chat/completions";
+    public static final String API_CHECK_CREDIT_GRANTS = "/dashboard/billing/credit_grants";
 }
