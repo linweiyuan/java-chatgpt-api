@@ -14,6 +14,21 @@ import java.util.concurrent.TimeUnit;
 import static com.linweiyuan.chatgptapi.misc.LogUtil.*;
 
 public class CaptchaUtil {
+    public static boolean checkAccess(WebDriver webDriver) {
+        try {
+            var wait = new FluentWait<>(webDriver)
+                    .withTimeout(Duration.ofSeconds(Constant.CHECK_ACCESS_DENIED_TIMEOUT))
+                    .pollingEvery(Duration.ofSeconds(Constant.CHECK_CAPTCHA_INTERVAL))
+                    .ignoring(NoSuchElementException.class)
+                    .ignoring(TimeoutException.class);
+            var errorDetails = wait.until(driver -> driver.findElement(By.className("cf-error-details")));
+            LogUtil.error(errorDetails.getText());
+            return false;
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
     public static void handleCaptcha(WebDriver webDriver) {
         try {
             var captchaDetected = CaptchaUtil.haveCaptcha(webDriver);
@@ -26,6 +41,7 @@ public class CaptchaUtil {
         } catch (Exception e) {
             error("Failed to handle captcha: " + e);
             webDriver.navigate().refresh();
+            handleCaptcha(webDriver);
         }
     }
 

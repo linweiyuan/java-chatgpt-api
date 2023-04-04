@@ -14,7 +14,8 @@ public class Constant {
     public static final int SCRIPT_EXECUTION_TIMEOUT = 10;
 
     public static final int CHECK_WELCOME_TEXT_TIMEOUT = 5;
-    public static final int CHECK_CAPTCHA_TIMEOUT = 15;
+    public static final int CHECK_CAPTCHA_TIMEOUT = 60;
+    public static final int CHECK_ACCESS_DENIED_TIMEOUT = 3;
     public static final int CHECK_CAPTCHA_INTERVAL = 1;
     public static final int CHECK_NEXT_INTERVAL = 5;
 
