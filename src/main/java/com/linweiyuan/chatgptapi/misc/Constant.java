@@ -1,7 +1,7 @@
 package com.linweiyuan.chatgptapi.misc;
 
 public class Constant {
-    public static final String ENV_VAR_CHATGPT_PROXY_SERVER = "CHATGPT_PROXY_SERVER";
+    public static final String ENV_VAR_ENABLE_CHATGPT = "ENABLE_CHATGPT";
     public static final String CHATGPT_URL = "https://chat.openai.com";
     public static final String CHATGPT_API_URL = CHATGPT_URL + "/backend-api";
     public static final String GET_CONVERSATIONS_URL = CHATGPT_API_URL + "/conversations?offset=%d&limit=%d";
@@ -12,15 +12,6 @@ public class Constant {
     public static final String CLEAR_CONVERSATIONS_URL = CHATGPT_API_URL + "/conversations";
     public static final String FEEDBACK_MESSAGE_URL = CHATGPT_API_URL + "/conversation/message_feedback";
 
-    public static final int SCRIPT_EXECUTION_TIMEOUT = 10;
-
-    public static final int CHECK_WELCOME_TEXT_TIMEOUT = 5;
-    public static final int CHECK_CAPTCHA_TIMEOUT = 15;
-    public static final int CHECK_ACCESS_DENIED_TIMEOUT = 3;
-    public static final int CHECK_AVAILABILITY_TIMEOUT = 3;
-    public static final int CHECK_CAPTCHA_INTERVAL = 1;
-    public static final int CHECK_NEXT_INTERVAL = 5;
-
     public static final String DEFAULT_OFFSET = "0";
     public static final String DEFAULT_LIMIT = "20";
 
@@ -30,7 +21,9 @@ public class Constant {
     public static final String ERROR_MESSAGE_UPDATE_CONVERSATION = "Failed to update conversation.";
     public static final String ERROR_MESSAGE_CLEAR_CONVERSATIONS = "Failed to clear conversations.";
     public static final String ERROR_MESSAGE_FEEDBACK_MESSAGE = "Failed to add feedback.";
-    public static final String ERROR_MESSAGE_CAPTCHA_INFINITE_LOOP = "Looks like captcha infinite loop, can not be handled at this time, remove " + ENV_VAR_CHATGPT_PROXY_SERVER + " to use API mode first.";
+    public static final String ERROR_MESSAGE_FAILED_TO_HANDLE_CAPTCHA = "Cannot handle captcha at this time, please remove " + ENV_VAR_ENABLE_CHATGPT + " or set to false to use API mode first.";
+    public static final String ERROR_MESSAGE_ACCESS_DENIED = "Access denied.";
+    public static final String ERROR_MESSAGE_AT_CAPACITY = "ChatGPT is at capacity right now.";
 
     public static final String API_URL = "https://api.openai.com";
     private static final String API_VERSION = "v1";

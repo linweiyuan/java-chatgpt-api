@@ -1,4 +1,4 @@
- package com.linweiyuan.chatgptapi.exception;
+package com.linweiyuan.chatgptapi.exception;
 
 import com.linweiyuan.chatgptapi.enums.ErrorEnum;
 import lombok.Getter;

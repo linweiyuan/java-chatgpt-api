@@ -25,6 +25,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
-    implementation 'org.seleniumhq.selenium:selenium-java:4.8.3'
+    implementation 'com.microsoft.playwright:playwright:1.32.0'
     implementation 'com.linweiyuan:logger-spring-boot-starter:1.0.0'
 }

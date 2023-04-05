@@ -5,34 +5,40 @@ import com.linweiyuan.chatgptapi.annotation.EnabledOnChatGPT;
 import com.linweiyuan.chatgptapi.enums.ErrorEnum;
 import com.linweiyuan.chatgptapi.exception.ConversationException;
 import com.linweiyuan.chatgptapi.misc.Constant;
-import com.linweiyuan.chatgptapi.model.chatgpt.*;
+import com.linweiyuan.chatgptapi.model.chatgpt.ConversationRequest;
+import com.linweiyuan.chatgptapi.model.chatgpt.FeedbackRequest;
+import com.linweiyuan.chatgptapi.model.chatgpt.GenerateTitleRequest;
+import com.linweiyuan.chatgptapi.model.chatgpt.UpdateConversationRequest;
 import com.linweiyuan.chatgptapi.service.ChatGPTService;
+import com.microsoft.playwright.Page;
 import lombok.SneakyThrows;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
+import java.util.Arrays;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @EnabledOnChatGPT
 @Service
 public class ChatGPTServiceImpl implements ChatGPTService {
-    private final JavascriptExecutor js;
+    private final Page page;
 
     private final ObjectMapper objectMapper;
 
-    public ChatGPTServiceImpl(WebDriver webDriver, ObjectMapper objectMapper) {
-        this.js = (JavascriptExecutor) webDriver;
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+    public ChatGPTServiceImpl(Page page, ObjectMapper objectMapper) {
+        this.page = page;
         this.objectMapper = objectMapper;
     }
 
     @SneakyThrows
     @Override
-    public ResponseEntity<GetConversationsResponse> getConversations(String accessToken, int offset, int limit) {
-        var responseText = (String) js.executeAsyncScript(
+    public ResponseEntity<String> getConversations(String accessToken, int offset, int limit) {
+        var responseText = (String) page.evaluate(
                 getGetScript(
                         String.format(Constant.GET_CONVERSATIONS_URL, offset, limit),
                         accessToken,
@@ -43,47 +49,61 @@ public class ChatGPTServiceImpl implements ChatGPTService {
             throw new ConversationException(ErrorEnum.GET_CONVERSATIONS_ERROR);
         }
 
-        return ResponseEntity.ok(objectMapper.readValue(responseText, GetConversationsResponse.class));
+        return ResponseEntity.ok(responseText);
     }
 
     @SneakyThrows
     @Override
     public Flux<String> startConversation(String accessToken, ConversationRequest conversationRequest) {
-        var requestBody = objectMapper.writeValueAsString(conversationRequest);
-        js.executeScript(getPostScriptForStartConversation(Constant.START_CONVERSATIONS_URL, accessToken, requestBody));
+        String requestBody = objectMapper.writeValueAsString(conversationRequest);
+        page.evaluate("delete window.conversationResponseData;");
+        page.evaluate(getPostScriptForStartConversation(Constant.START_CONVERSATIONS_URL, accessToken, requestBody));
 
-        return Flux.create(fluxSink -> {
-            var executorService = Executors.newSingleThreadExecutor();
-            executorService.submit(() -> {
-                while (true) {
-                    try {
-                        var eventData = (String) js.executeAsyncScript(getCallbackScriptForStartConversation());
-                        if (eventData.equals("429") || eventData.equals("[DONE]")) {
-                            fluxSink.next(eventData);
-                            fluxSink.complete();
-                            break;
-                        }
+        return Flux.create(fluxSink -> executorService.submit(() -> {
+            // prevent handle multiple times
+            var temp = "";
+            while (true) {
+                var conversationResponseData = (String) page.evaluate("() => window.conversationResponseData;");
+                if (conversationResponseData == null) {
+                    continue;
+                }
 
-                        fluxSink.next(eventData);
-                    } catch (Exception e) {
-                        fluxSink.complete();
-                        break;
+                conversationResponseData = Arrays.stream(conversationResponseData.split("\n")).map(String::trim).filter(s -> !s.isBlank() && !s.startsWith("event") && !s.startsWith("data: 2023")).reduce((a, b) -> b).orElse("[DONE]");
+
+                if (!temp.isBlank()) {
+                    if (temp.equals(conversationResponseData)) {
+                        continue;
                     }
                 }
-            });
-            executorService.shutdown();
-        });
+                temp = conversationResponseData;
+
+                if (conversationResponseData.equals("429") || conversationResponseData.equals("[DONE]")) {
+                    fluxSink.next(conversationResponseData);
+                    fluxSink.complete();
+                    break;
+                }
+
+                conversationResponseData = conversationResponseData.substring(5);
+                fluxSink.next(conversationResponseData);
+
+                // if send with "<|im_end|>", will break, but normal usage won't matter, don't want to make class to deserializable again
+                if (conversationResponseData.contains("<|im_end|>")) {
+                    fluxSink.complete();
+                    break;
+                }
+            }
+        }));
     }
 
     @SneakyThrows
     @Override
-    public ResponseEntity<GenerateTitleResponse> genConversationTitle(
+    public ResponseEntity<String> genConversationTitle(
             String accessToken,
             String conversationId,
             GenerateTitleRequest generateTitleRequest
     ) {
         var jsonBody = objectMapper.writeValueAsString(generateTitleRequest);
-        var responseText = (String) js.executeAsyncScript(
+        var responseText = (String) page.evaluate(
                 getPostScript(
                         String.format(Constant.GENERATE_TITLE_URL, conversationId),
                         accessToken,
@@ -91,13 +111,13 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                         Constant.ERROR_MESSAGE_GENERATE_TITLE
                 )
         );
-        return ResponseEntity.ok(objectMapper.readValue(responseText, GenerateTitleResponse.class));
+        return ResponseEntity.ok(responseText);
     }
 
     @SneakyThrows
     @Override
     public ResponseEntity<String> getConversationContent(String accessToken, String conversationId) {
-        var responseText = (String) js.executeAsyncScript(
+        var responseText = (String) page.evaluate(
                 getGetScript(
                         String.format(Constant.GET_CONVERSATION_CONTENT_URL, conversationId),
                         accessToken,
@@ -115,7 +135,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
             UpdateConversationRequest updateConversationRequest
     ) {
         var jsonBody = objectMapper.writeValueAsString(updateConversationRequest);
-        var responseText = (String) js.executeAsyncScript(
+        var responseText = (String) page.evaluate(
                 getPatchScript(
                         String.format(Constant.UPDATE_CONVERSATION_URL, conversationId),
                         accessToken,
@@ -130,7 +150,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
     @Override
     public ResponseEntity<Boolean> clearConversations(String accessToken, UpdateConversationRequest updateConversationRequest) {
         var jsonBody = objectMapper.writeValueAsString(updateConversationRequest);
-        var responseText = (String) js.executeAsyncScript(
+        var responseText = (String) page.evaluate(
                 getPatchScript(
                         Constant.CLEAR_CONVERSATIONS_URL,
                         accessToken,
@@ -145,7 +165,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
     @Override
     public ResponseEntity<String> feedbackMessage(String accessToken, FeedbackRequest feedbackRequest) {
         var jsonBody = objectMapper.writeValueAsString(feedbackRequest);
-        var responseText = (String) js.executeAsyncScript(
+        var responseText = (String) page.evaluate(
                 getPostScript(
                         Constant.FEEDBACK_MESSAGE_URL,
                         accessToken,
@@ -169,18 +189,17 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                     }
                     return response.text();
                 })
-                .then(text => {
-                    arguments[0](text);
-                })
                 .catch(err => {
-                    arguments[0](err.message);
+                    return err.message;
                 });
                 """.formatted(url, accessToken, errorMessage);
     }
 
-    @SuppressWarnings("SameParameterValue")
+    @SuppressWarnings({"SameParameterValue", "SpellCheckingInspection"})
     private String getPostScriptForStartConversation(String url, String accessToken, String jsonString) {
         return """
+                let conversationResponseData;
+
                 const xhr = new XMLHttpRequest();
                 xhr.open('POST', '%s', true);
                 xhr.setRequestHeader('Accept', 'text/event-stream');
@@ -188,33 +207,15 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 xhr.setRequestHeader('Content-Type', 'application/json');
                 xhr.onreadystatechange = function() {
                     if (xhr.readyState === xhr.LOADING && xhr.status === 200) {
-                        window.postMessage(xhr.responseText);
+                        window.conversationResponseData = xhr.responseText;
                     } else if (xhr.status === 429) {
-                        window.postMessage("429");
+                        window.conversationResponseData = '429';
                     } if (xhr.readyState === xhr.DONE) {
-
+                        window.conversationResponseData = '[DONE]';
                     }
                 };
                 xhr.send('%s');
                 """.formatted(url, accessToken, jsonString);
-    }
-
-    private String getCallbackScriptForStartConversation() {
-        return """
-                const callback = arguments[0];
-                const handleFunction = function(event) {
-                    const list = event.data.split('\\n\\n');
-                    list.pop();
-                    const eventData = list.pop();
-                    if (eventData.startsWith('event')) {
-                        callback(eventData.substring(55));
-                    } else {
-                        callback(eventData.substring(6));
-                    }
-                };
-                window.removeEventListener('message', handleFunction);
-                window.addEventListener('message', handleFunction);
-                 """;
     }
 
     private String getPostScript(String url, String accessToken, String jsonBody, String errorMessage) {
@@ -233,11 +234,8 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                     }
                     return response.text();
                 })
-                .then(text => {
-                    arguments[0](text);
-                })
                 .catch(err => {
-                    arguments[0](err.message);
+                    return err.message;
                 });
                 """.formatted(url, accessToken, jsonBody, errorMessage);
     }
@@ -258,11 +256,8 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                     }
                     return response.text();
                 })
-                .then(text => {
-                    arguments[0](text);
-                })
                 .catch(err => {
-                    arguments[0](err.message);
+                    return err.message;
                 });
                 """.formatted(url, accessToken, jsonBody, errorMessage);
     }

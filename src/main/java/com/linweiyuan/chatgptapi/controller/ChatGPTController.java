@@ -3,7 +3,10 @@ package com.linweiyuan.chatgptapi.controller;
 import com.linweiyuan.chatgptapi.annotation.EnabledOnChatGPT;
 import com.linweiyuan.chatgptapi.annotation.PreCheck;
 import com.linweiyuan.chatgptapi.misc.Constant;
-import com.linweiyuan.chatgptapi.model.chatgpt.*;
+import com.linweiyuan.chatgptapi.model.chatgpt.ConversationRequest;
+import com.linweiyuan.chatgptapi.model.chatgpt.FeedbackRequest;
+import com.linweiyuan.chatgptapi.model.chatgpt.GenerateTitleRequest;
+import com.linweiyuan.chatgptapi.model.chatgpt.UpdateConversationRequest;
 import com.linweiyuan.chatgptapi.service.ChatGPTService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -23,7 +26,7 @@ public class ChatGPTController {
     }
 
     @GetMapping("/conversations")
-    public ResponseEntity<GetConversationsResponse> getConversations(
+    public ResponseEntity<String> getConversations(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String accessToken,
             @RequestParam(defaultValue = Constant.DEFAULT_OFFSET) int offset,
             @RequestParam(defaultValue = Constant.DEFAULT_LIMIT) int limit
@@ -40,7 +43,7 @@ public class ChatGPTController {
     }
 
     @PostMapping("/conversation/gen_title/{conversationId}")
-    public ResponseEntity<GenerateTitleResponse> genConversationTitle(
+    public ResponseEntity<String> genConversationTitle(
             @RequestHeader String authorization,
             @PathVariable String conversationId,
             @RequestBody GenerateTitleRequest generateTitleRequest
