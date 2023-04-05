@@ -1,5 +1,7 @@
 package com.linweiyuan.chatgptapi.misc;
 
+import com.linweiyuan.chatgptapi.enums.ErrorEnum;
+import com.linweiyuan.chatgptapi.exception.CaptchaException;
 import lombok.SneakyThrows;
 import lombok.val;
 import org.openqa.selenium.By;
@@ -55,7 +57,12 @@ public class CaptchaUtil {
                 tryToClickCaptchaTextBox(webDriver);
             }
         } catch (Exception e) {
-            error("Failed to handle captcha: " + e);
+            error("Failed to handle captcha: " + e.getMessage());
+
+            if (e instanceof CaptchaException) {
+                return;
+            }
+
             webDriver.navigate().refresh();
             handleCaptcha(webDriver);
         }
@@ -93,6 +100,10 @@ public class CaptchaUtil {
         TimeUnit.SECONDS.sleep(Constant.CHECK_NEXT_INTERVAL);
 
         val title = webDriver.getTitle();
+        if (title.isBlank()) {
+            throw new CaptchaException(ErrorEnum.CAPTCHA_INFINITE_LOOP_ERROR);
+        }
+
         info(title);
         if (title.equals("Just a moment...")) {
             info("Still get a captcha");

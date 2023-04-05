@@ -1,5 +1,6 @@
 package com.linweiyuan.chatgptapi.config;
 
+import com.linweiyuan.chatgptapi.annotation.EnabledOnChatGPT;
 import com.linweiyuan.chatgptapi.misc.CaptchaUtil;
 import com.linweiyuan.chatgptapi.misc.Constant;
 import lombok.SneakyThrows;
@@ -13,6 +14,7 @@ import java.net.URL;
 import java.time.Duration;
 import java.util.List;
 
+@EnabledOnChatGPT
 @Configuration
 public class WebDriverConfig {
     @SneakyThrows

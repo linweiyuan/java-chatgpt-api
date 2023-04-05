@@ -1,5 +1,6 @@
 package com.linweiyuan.chatgptapi.controller;
 
+import com.linweiyuan.chatgptapi.annotation.EnabledOnChatGPT;
 import com.linweiyuan.chatgptapi.annotation.PreCheck;
 import com.linweiyuan.chatgptapi.misc.Constant;
 import com.linweiyuan.chatgptapi.model.chatgpt.*;
@@ -11,7 +12,8 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 
 @SuppressWarnings("unused")
-@PreCheck(onlyCheckAuthorization = false)
+@EnabledOnChatGPT
+@PreCheck
 @RestController
 public class ChatGPTController {
     private final ChatGPTService chatGPTService;

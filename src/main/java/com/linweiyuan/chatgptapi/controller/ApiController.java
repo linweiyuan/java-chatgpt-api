@@ -1,6 +1,5 @@
 package com.linweiyuan.chatgptapi.controller;
 
-import com.linweiyuan.chatgptapi.annotation.PreCheck;
 import com.linweiyuan.chatgptapi.misc.Constant;
 import com.linweiyuan.chatgptapi.model.api.ChatCompletionsRequest;
 import com.linweiyuan.chatgptapi.service.ApiService;
@@ -10,7 +9,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @SuppressWarnings("unused")
-@PreCheck
 @RestController
 public class ApiController {
     private final ApiService apiService;

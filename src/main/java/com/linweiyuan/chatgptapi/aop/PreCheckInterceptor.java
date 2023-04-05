@@ -1,21 +1,24 @@
 package com.linweiyuan.chatgptapi.aop;
 
+import com.linweiyuan.chatgptapi.annotation.EnabledOnChatGPT;
 import com.linweiyuan.chatgptapi.annotation.PreCheck;
 import com.linweiyuan.chatgptapi.misc.CaptchaUtil;
 import com.linweiyuan.chatgptapi.misc.Constant;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.openqa.selenium.InvalidSelectorException;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.ScriptTimeoutException;
 import org.openqa.selenium.WebDriver;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
-import static com.linweiyuan.chatgptapi.misc.LogUtil.*;
+import static com.linweiyuan.chatgptapi.misc.LogUtil.error;
+import static com.linweiyuan.chatgptapi.misc.LogUtil.warn;
 
+@EnabledOnChatGPT
 @Component
 public class PreCheckInterceptor implements HandlerInterceptor {
     private final WebDriver webDriver;
@@ -36,17 +39,6 @@ public class PreCheckInterceptor implements HandlerInterceptor {
             }
         }
 
-        info(request.getRequestURI());
-
-        if (request.getHeader(HttpHeaders.AUTHORIZATION) == null) {
-            warn("No access token");
-            return false;
-        }
-
-        if (precheck.onlyCheckAuthorization()) {
-            return true;
-        }
-
         try {
             var status = (Long) ((JavascriptExecutor) webDriver).executeScript("""
                     const xhr = new XMLHttpRequest();
@@ -64,6 +56,8 @@ public class PreCheckInterceptor implements HandlerInterceptor {
             }
         } catch (ScriptTimeoutException e) {
             error("Refresh failed: " + e);
+        } catch (InvalidSelectorException e) {
+            error("Failed to handle captcha: " + e);
         }
 
         return true;
