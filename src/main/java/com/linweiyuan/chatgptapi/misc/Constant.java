@@ -1,5 +1,8 @@
 package com.linweiyuan.chatgptapi.misc;
 
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 public class Constant {
     public static final String ENV_VAR_ENABLE_CHATGPT = "ENABLE_CHATGPT";
     public static final String CHATGPT_URL = "https://chat.openai.com";
@@ -24,6 +27,8 @@ public class Constant {
     public static final String ERROR_MESSAGE_FAILED_TO_HANDLE_CAPTCHA = "Cannot handle captcha at this time, please remove " + ENV_VAR_ENABLE_CHATGPT + " or set to false to use API mode first.";
     public static final String ERROR_MESSAGE_ACCESS_DENIED = "Access denied.";
     public static final String ERROR_MESSAGE_AT_CAPACITY = "ChatGPT is at capacity right now.";
+
+    public static final Lock PAGE_RELOAD_LOCK = new ReentrantLock(true);
 
     public static final String API_URL = "https://api.openai.com";
     private static final String API_VERSION = "v1";

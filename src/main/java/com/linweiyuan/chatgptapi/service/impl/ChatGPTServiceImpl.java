@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static com.linweiyuan.chatgptapi.misc.Constant.PAGE_RELOAD_LOCK;
+
 @EnabledOnChatGPT
 @Service
 public class ChatGPTServiceImpl implements ChatGPTService {
@@ -60,37 +62,44 @@ public class ChatGPTServiceImpl implements ChatGPTService {
         page.evaluate(getPostScriptForStartConversation(Constant.START_CONVERSATIONS_URL, accessToken, requestBody));
 
         return Flux.create(fluxSink -> executorService.submit(() -> {
-            // prevent handle multiple times
-            var temp = "";
-            while (true) {
-                var conversationResponseData = (String) page.evaluate("() => window.conversationResponseData;");
-                if (conversationResponseData == null) {
-                    continue;
-                }
+            try {
+                // prevent page auto reload interrupting conversation
+                PAGE_RELOAD_LOCK.lock();
 
-                conversationResponseData = Arrays.stream(conversationResponseData.split("\n")).map(String::trim).filter(s -> !s.isBlank() && !s.startsWith("event") && !s.startsWith("data: 2023")).reduce((a, b) -> b).orElse("[DONE]");
-
-                if (!temp.isBlank()) {
-                    if (temp.equals(conversationResponseData)) {
+                // prevent handle multiple times
+                var temp = "";
+                while (true) {
+                    var conversationResponseData = (String) page.evaluate("() => window.conversationResponseData;");
+                    if (conversationResponseData == null) {
                         continue;
                     }
-                }
-                temp = conversationResponseData;
 
-                if (conversationResponseData.equals("429") || conversationResponseData.equals("[DONE]")) {
+                    conversationResponseData = Arrays.stream(conversationResponseData.split("\n")).map(String::trim).filter(s -> !s.isBlank() && !s.startsWith("event") && !s.startsWith("data: 2023")).reduce((a, b) -> b).orElse("[DONE]");
+
+                    if (!temp.isBlank()) {
+                        if (temp.equals(conversationResponseData)) {
+                            continue;
+                        }
+                    }
+                    temp = conversationResponseData;
+
+                    if (conversationResponseData.equals("429") || conversationResponseData.equals("[DONE]")) {
+                        fluxSink.next(conversationResponseData);
+                        fluxSink.complete();
+                        break;
+                    }
+
+                    conversationResponseData = conversationResponseData.substring(5);
                     fluxSink.next(conversationResponseData);
-                    fluxSink.complete();
-                    break;
-                }
 
-                conversationResponseData = conversationResponseData.substring(5);
-                fluxSink.next(conversationResponseData);
-
-                // if send with "<|im_end|>", will break, but normal usage won't matter, don't want to make class to deserializable again
-                if (conversationResponseData.contains("<|im_end|>")) {
-                    fluxSink.complete();
-                    break;
+                    // if send with "<|im_end|>", will break, but normal usage won't matter, don't want to make class to deserializable again
+                    if (conversationResponseData.contains("<|im_end|>")) {
+                        fluxSink.complete();
+                        break;
+                    }
                 }
+            } finally {
+                PAGE_RELOAD_LOCK.unlock();
             }
         }));
     }

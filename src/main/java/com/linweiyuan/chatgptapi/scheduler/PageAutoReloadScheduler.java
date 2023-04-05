@@ -7,9 +7,7 @@ import com.microsoft.playwright.Page;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
-
-import static com.linweiyuan.chatgptapi.misc.Constant.pageRefreshLock;
+import static com.linweiyuan.chatgptapi.misc.Constant.PAGE_RELOAD_LOCK;
 import static com.linweiyuan.chatgptapi.misc.LogUtil.error;
 import static com.linweiyuan.chatgptapi.misc.LogUtil.warn;
 import static com.linweiyuan.chatgptapi.misc.PlaywrightUtil.*;
@@ -23,30 +21,38 @@ public class PageAutoReloadScheduler {
         this.page = page;
     }
 
-    // one minute
-    @Scheduled(fixedRate = 1000 * 60, initialDelay = 1000 * 10)
+    // auto reload every 3 minutes if not in conversation
+    @Scheduled(fixedRate = 1000 * 60 * 3, initialDelay = 1000 * 10)
     public void refresh() {
-        if (pageRefreshLock.tryLock()) {
-            page.reload();
-            warn("Page reload: " + LocalDateTime.now());
+        if (PAGE_RELOAD_LOCK.tryLock()) {
+            try {
+                page.reload();
+                warn("Page reload start");
 
-            if (isAccessDenied(page)) {
-                throw new CaptchaException(ErrorEnum.ACCESS_DENIED);
-            }
-
-            if (isAtCapacity(page)) {
-                throw new CaptchaException(ErrorEnum.ACCESS_DENIED);
-            }
-
-            if (isWelcomed(page)) {
-                warn("Reload done, no captcha.");
-            } else {
-                if (isCaptchaClicked(page)) {
-                    warn("Reload done, captcha clicked.");
-                } else {
-                    error("Reload failed.");
+                if (isAccessDenied(page)) {
+                    throw new CaptchaException(ErrorEnum.ACCESS_DENIED);
                 }
+
+                if (isAtCapacity(page)) {
+                    throw new CaptchaException(ErrorEnum.ACCESS_DENIED);
+                }
+
+                if (isWelcomed(page)) {
+                    warn("Reload done, no captcha");
+                } else {
+                    if (isCaptchaClicked(page)) {
+                        warn("Reload done, captcha clicked");
+                    } else {
+                        error("Reload failed.");
+                    }
+                }
+            } catch (Exception e) {
+                error("Reload failed: " + e.getMessage());
+            } finally {
+                PAGE_RELOAD_LOCK.unlock();
             }
+        } else {
+            warn("Reload canceled, in conversation");
         }
     }
 }
