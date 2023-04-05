@@ -1,8 +1,7 @@
 package com.linweiyuan.chatgptapi.misc;
 
-@SuppressWarnings("SpellCheckingInspection")
 public class Constant {
-    public static final String ENV_VAR_CHATGPT_PROXY_SERVER = "CHATGPT_PTOXY_SERVER";
+    public static final String ENV_VAR_CHATGPT_PROXY_SERVER = "CHATGPT_PROXY_SERVER";
     public static final String CHATGPT_URL = "https://chat.openai.com";
     public static final String CHATGPT_API_URL = CHATGPT_URL + "/backend-api";
     public static final String GET_CONVERSATIONS_URL = CHATGPT_API_URL + "/conversations?offset=%d&limit=%d";
