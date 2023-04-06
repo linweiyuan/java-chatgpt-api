@@ -223,7 +223,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                         window.conversationResponseData = '[DONE]';
                     }
                 };
-                xhr.send('%s');
+                xhr.send(JSON.stringify(%s));
                 """.formatted(url, accessToken, jsonString);
     }
 
@@ -235,7 +235,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                         'Authorization': '%s',
                         'Content-Type': 'application/json'
                     },
-                    body: '%s'
+                    body: JSON.stringify(%s)
                 })
                 .then(response => {
                     if (!response.ok) {
@@ -257,7 +257,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                         'Authorization': '%s',
                         'Content-Type': 'application/json'
                     },
-                    body: '%s'
+                    body: JSON.stringify(%s)
                 })
                 .then(response => {
                     if (!response.ok) {
