@@ -11,6 +11,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import static com.linweiyuan.chatgptapi.misc.HeaderUtil.getAuthorizationHeader;
+
 @Service
 public class ApiServiceImpl implements ApiService {
     private final WebClient webClient;
@@ -40,12 +42,5 @@ public class ApiServiceImpl implements ApiService {
                 .header(HttpHeaders.AUTHORIZATION, getAuthorizationHeader(authorization))
                 .retrieve()
                 .bodyToMono(String.class);
-    }
-
-    private String getAuthorizationHeader(String authorization) {
-        if (authorization.startsWith("Bearer")) {
-            return authorization;
-        }
-        return "Bearer " + authorization;
     }
 }

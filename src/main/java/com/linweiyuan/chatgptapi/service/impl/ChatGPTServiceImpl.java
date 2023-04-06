@@ -22,6 +22,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static com.linweiyuan.chatgptapi.misc.Constant.PAGE_RELOAD_LOCK;
+import static com.linweiyuan.chatgptapi.misc.HeaderUtil.getAuthorizationHeader;
 
 @EnabledOnChatGPT
 @Service
@@ -59,7 +60,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
     public Flux<String> startConversation(String accessToken, ConversationRequest conversationRequest) {
         String requestBody = objectMapper.writeValueAsString(conversationRequest);
         page.evaluate("delete window.conversationResponseData;");
-        page.evaluate(getPostScriptForStartConversation(Constant.START_CONVERSATIONS_URL, accessToken, requestBody));
+        page.evaluate(getPostScriptForStartConversation(Constant.START_CONVERSATIONS_URL, getAuthorizationHeader(accessToken), requestBody));
 
         return Flux.create(fluxSink -> executorService.submit(() -> {
             try {
@@ -74,7 +75,11 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                         continue;
                     }
 
-                    conversationResponseData = Arrays.stream(conversationResponseData.split("\n")).map(String::trim).filter(s -> !s.isBlank() && !s.startsWith("event") && !s.startsWith("data: 2023")).reduce((a, b) -> b).orElse("[DONE]");
+                    conversationResponseData = Arrays.stream(conversationResponseData.split("\n"))
+                            .map(String::trim)
+                            .filter(s -> !s.isBlank() && !s.startsWith("event") && !s.startsWith("data: 2023"))
+                            .reduce((a, b) -> b)
+                            .orElse("[DONE]");
 
                     if (!temp.isBlank()) {
                         if (temp.equals(conversationResponseData)) {
@@ -201,7 +206,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 .catch(err => {
                     return err.message;
                 });
-                """.formatted(url, accessToken, errorMessage);
+                """.formatted(url, getAuthorizationHeader(accessToken), errorMessage);
     }
 
     @SuppressWarnings({"SameParameterValue", "SpellCheckingInspection"})
@@ -224,7 +229,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                     }
                 };
                 xhr.send(JSON.stringify(%s));
-                """.formatted(url, accessToken, jsonString);
+                """.formatted(url, getAuthorizationHeader(accessToken), jsonString);
     }
 
     private String getPostScript(String url, String accessToken, String jsonBody, String errorMessage) {
@@ -246,7 +251,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 .catch(err => {
                     return err.message;
                 });
-                """.formatted(url, accessToken, jsonBody, errorMessage);
+                """.formatted(url, getAuthorizationHeader(accessToken), jsonBody, errorMessage);
     }
 
     private String getPatchScript(String url, String accessToken, String jsonBody, String errorMessage) {
@@ -268,6 +273,6 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 .catch(err => {
                     return err.message;
                 });
-                """.formatted(url, accessToken, jsonBody, errorMessage);
+                """.formatted(url, getAuthorizationHeader(accessToken), jsonBody, errorMessage);
     }
 }
