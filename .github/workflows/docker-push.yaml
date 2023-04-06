@@ -9,31 +9,8 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout logger-spring-boot-starter
-        uses: actions/checkout@v3
-        with:
-          repository: linweiyuan/logger-spring-boot-starter
-          path: logger-spring-boot-starter
-      - uses: actions/setup-java@v3
-        with:
-          distribution: temurin
-          java-version: 17
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
-      - name: Execute Gradle build
-        run: |
-          cd logger-spring-boot-starter
-          ./gradlew publishToMavenLocal
-
       - name: Checkout java-chatgpt-api
         uses: actions/checkout@v3
-        with:
-          path: java-chatgpt-api
-      - name: Execute Gradle build
-        run: |
-          cd java-chatgpt-api
-          ./gradlew build
-
       - name: Login to DockerHub
         uses: docker/login-action@v2
         with:
@@ -42,6 +19,6 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v3
         with:
-          context: java-chatgpt-api
+          context: .
           push: true
           tags: linweiyuan/java-chatgpt-api

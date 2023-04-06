@@ -1,3 +1,5 @@
+./gradlew installFirefox
+
 ./gradlew build
 
 docker-compose build

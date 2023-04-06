@@ -23,16 +23,8 @@ services:
     ports:
       - 8080:8080
     environment:
-      - ENABLECHATGPT=true
-#      - NETWORK_PROXY_SERVER=http://host:port
-#      - NETWORK_PROXY_SERVER=socks5://host:port
-    depends_on:
-      - chatgpt-proxy-server
-    restart: unless-stopped
-
-  chatgpt-proxy-server:
-    container_name: chatgpt-proxy-server
-    image: linweiyuan/chatgpt-proxy-server
+      - CHATGPT=true
+      - PROXY=
     restart: unless-stopped
 ```
 

@@ -26,5 +26,10 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     implementation 'com.microsoft.playwright:playwright:1.32.0'
-    implementation 'com.linweiyuan:logger-spring-boot-starter:1.0.0'
+}
+
+tasks.register('installFirefox', JavaExec) {
+    mainClass = 'com.microsoft.playwright.CLI'
+    classpath = sourceSets.main.runtimeClasspath
+    args 'install', 'firefox'
 }

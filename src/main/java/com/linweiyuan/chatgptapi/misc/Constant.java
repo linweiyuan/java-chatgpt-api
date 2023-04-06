@@ -4,7 +4,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Constant {
-    public static final String ENV_VAR_ENABLE_CHATGPT = "ENABLE_CHATGPT";
+    public static final String ENV_VAR_CHATGPT = "CHATGPT";
     public static final String CHATGPT_URL = "https://chat.openai.com";
     public static final String CHATGPT_API_URL = CHATGPT_URL + "/backend-api";
     public static final String GET_CONVERSATIONS_URL = CHATGPT_API_URL + "/conversations?offset=%d&limit=%d";
@@ -24,7 +24,7 @@ public class Constant {
     public static final String ERROR_MESSAGE_UPDATE_CONVERSATION = "Failed to update conversation.";
     public static final String ERROR_MESSAGE_CLEAR_CONVERSATIONS = "Failed to clear conversations.";
     public static final String ERROR_MESSAGE_FEEDBACK_MESSAGE = "Failed to add feedback.";
-    public static final String ERROR_MESSAGE_FAILED_TO_HANDLE_CAPTCHA = "Cannot handle captcha at this time, please remove " + ENV_VAR_ENABLE_CHATGPT + " or set to false to use API mode first.";
+    public static final String ERROR_MESSAGE_FAILED_TO_HANDLE_CAPTCHA = "Cannot handle captcha at this time, please restart to have a try or use API mode first.";
     public static final String ERROR_MESSAGE_ACCESS_DENIED = "Access denied.";
     public static final String ERROR_MESSAGE_AT_CAPACITY = "ChatGPT is at capacity right now.";
 
