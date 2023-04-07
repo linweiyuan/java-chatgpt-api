@@ -58,49 +58,51 @@ public class ChatGPTServiceImpl implements ChatGPTService {
     @SneakyThrows
     @Override
     public Flux<String> startConversation(String accessToken, ConversationRequest conversationRequest) {
-        String requestBody = objectMapper.writeValueAsString(conversationRequest);
-        page.evaluate("delete window.conversationResponseData;");
-        page.evaluate(getPostScriptForStartConversation(Constant.START_CONVERSATIONS_URL, getAuthorizationHeader(accessToken), requestBody));
-
         return Flux.create(fluxSink -> executorService.submit(() -> {
-            try {
-                // prevent page auto reload interrupting conversation
-                PAGE_RELOAD_LOCK.lock();
+                    try {
+                        // prevent page auto reload interrupting conversation
+                        PAGE_RELOAD_LOCK.lock();
 
-                // prevent handle multiple times
-                var temp = "";
-                while (true) {
-                    var conversationResponseData = (String) page.evaluate("() => window.conversationResponseData;");
-                    if (conversationResponseData == null) {
-                        continue;
-                    }
+                        String requestBody = objectMapper.writeValueAsString(conversationRequest);
+                        page.evaluate("delete window.conversationResponseData;");
+                        page.evaluate(getPostScriptForStartConversation(Constant.START_CONVERSATIONS_URL, getAuthorizationHeader(accessToken), requestBody));
 
-                    conversationResponseData = Arrays.stream(conversationResponseData.split("\n"))
-                            .map(String::trim)
-                            .filter(s -> !s.isBlank() && !s.startsWith("event") && !s.startsWith("data: 2023"))
-                            .reduce((a, b) -> b)
-                            .orElse("[DONE]");
+                        // prevent handle multiple times
+                        var temp = "";
+                        while (true) {
+                            var conversationResponseData = (String) page.evaluate("() => window.conversationResponseData;");
+                            if (conversationResponseData == null) {
+                                continue;
+                            }
 
-                    if (!temp.isBlank()) {
-                        if (temp.equals(conversationResponseData)) {
-                            continue;
+                            conversationResponseData = Arrays.stream(conversationResponseData.split("\n"))
+                                    .map(String::trim)
+                                    .filter(s -> !s.isBlank() && !s.startsWith("event") && !s.startsWith("data: 2023"))
+                                    .reduce((a, b) -> b)
+                                    .orElse("[DONE]");
+
+                            if (!temp.isBlank()) {
+                                if (temp.equals(conversationResponseData)) {
+                                    continue;
+                                }
+                            }
+                            temp = conversationResponseData;
+
+                            if (conversationResponseData.equals("429") || conversationResponseData.equals("[DONE]")) {
+                                fluxSink.next(conversationResponseData);
+                                fluxSink.complete();
+                                break;
+                            }
+
+                            conversationResponseData = conversationResponseData.substring(5);
+                            fluxSink.next(conversationResponseData);
                         }
+                    } catch (Exception ignored) {
+                    } finally {
+                        PAGE_RELOAD_LOCK.unlock();
                     }
-                    temp = conversationResponseData;
-
-                    if (conversationResponseData.equals("429") || conversationResponseData.equals("[DONE]")) {
-                        fluxSink.next(conversationResponseData);
-                        fluxSink.complete();
-                        break;
-                    }
-
-                    conversationResponseData = conversationResponseData.substring(5);
-                    fluxSink.next(conversationResponseData);
-                }
-            } finally {
-                PAGE_RELOAD_LOCK.unlock();
-            }
-        }));
+                })
+        );
     }
 
     @SneakyThrows
