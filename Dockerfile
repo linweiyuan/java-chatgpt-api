@@ -18,6 +18,7 @@ ENV PLAYWRIGHT_NODEJS_PATH=/usr/bin/node
 ENV CHATGPT=true
 
 RUN ./gradlew installFirefox \
-    && ./gradlew build
+    && ./gradlew build \
+    && rm -rf ~/.gradle
 
 CMD ["java", "-jar", "build/libs/java-chatgpt-api-1.0.0.jar"]
