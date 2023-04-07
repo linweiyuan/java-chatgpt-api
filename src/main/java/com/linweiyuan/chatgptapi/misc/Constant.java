@@ -26,6 +26,7 @@ public class Constant {
     public static final String ERROR_MESSAGE_FEEDBACK_MESSAGE = "Failed to add feedback.";
     public static final String ERROR_MESSAGE_ACCESS_DENIED = "Access denied.";
     public static final String ERROR_MESSAGE_AT_CAPACITY = "ChatGPT is at capacity right now.";
+    public static final String ERROR_MESSAGE_GET_CF_COOKIES = "Failed to get cf cookies.";
 
     public static final Lock PAGE_RELOAD_LOCK = new ReentrantLock(true);
 

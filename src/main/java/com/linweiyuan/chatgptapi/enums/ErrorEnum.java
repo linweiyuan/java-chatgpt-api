@@ -12,6 +12,7 @@ public enum ErrorEnum {
 
     ACCESS_DENIED(500, Constant.ERROR_MESSAGE_ACCESS_DENIED),
     AT_CAPACITY(500, Constant.ERROR_MESSAGE_AT_CAPACITY),
+    GET_CF_COOKIES_ERROR(500, Constant.ERROR_MESSAGE_GET_CF_COOKIES),
     ;
 
     public final int code;
