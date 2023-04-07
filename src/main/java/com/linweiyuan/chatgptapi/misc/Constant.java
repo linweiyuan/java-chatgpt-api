@@ -24,7 +24,6 @@ public class Constant {
     public static final String ERROR_MESSAGE_UPDATE_CONVERSATION = "Failed to update conversation.";
     public static final String ERROR_MESSAGE_CLEAR_CONVERSATIONS = "Failed to clear conversations.";
     public static final String ERROR_MESSAGE_FEEDBACK_MESSAGE = "Failed to add feedback.";
-    public static final String ERROR_MESSAGE_FAILED_TO_HANDLE_CAPTCHA = "Cannot handle captcha at this time, please restart to have a try or use API mode first.";
     public static final String ERROR_MESSAGE_ACCESS_DENIED = "Access denied.";
     public static final String ERROR_MESSAGE_AT_CAPACITY = "ChatGPT is at capacity right now.";
 

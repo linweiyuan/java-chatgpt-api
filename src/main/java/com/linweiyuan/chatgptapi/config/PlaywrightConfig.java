@@ -28,7 +28,8 @@ public class PlaywrightConfig {
         if (proxy != null && !proxy.isBlank()) {
             launchOptions = launchOptions.setProxy(new Proxy(proxy));
         }
-        // Chromium not work
+
+        // Chromium won't work
         Browser browser = Playwright.create()
                 .firefox()
                 .launch(launchOptions);
@@ -55,10 +56,14 @@ public class PlaywrightConfig {
         error("Yes");
 
         warn("Try to handle captcha");
-        if (isCaptchaClicked(page)) {
-            return page;
-        }
+        return handleCaptcha(page);
+    }
 
-        throw new CaptchaException(ErrorEnum.HANDLE_CAPTCHA_ERROR);
+    private Page handleCaptcha(Page page) {
+        if (isCaptchaClicked(page) && isWelcomed(page)) {
+            return page;
+        } else {
+            return handleCaptcha(page);
+        }
     }
 }
