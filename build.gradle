@@ -17,7 +17,7 @@ configurations {
 
 repositories {
     mavenCentral()
-    mavenLocal()
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
@@ -26,6 +26,7 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     implementation 'com.microsoft.playwright:playwright:1.32.0'
+    implementation 'com.github.linweiyuan:logger-spring-boot-starter:6e263760a4'
 }
 
 tasks.register('installFirefox', JavaExec) {

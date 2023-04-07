@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 
 import static com.linweiyuan.chatgptapi.misc.Constant.PAGE_RELOAD_LOCK;
 import static com.linweiyuan.chatgptapi.misc.LogUtil.error;
-import static com.linweiyuan.chatgptapi.misc.LogUtil.warn;
 import static com.linweiyuan.chatgptapi.misc.PlaywrightUtil.*;
 
 @EnabledOnChatGPT
@@ -27,7 +26,6 @@ public class PageAutoReloadScheduler {
         if (PAGE_RELOAD_LOCK.tryLock()) {
             try {
                 page.reload();
-                warn("Page reload start");
 
                 if (isAccessDenied(page)) {
                     throw new CaptchaException(ErrorEnum.ACCESS_DENIED);
@@ -37,22 +35,14 @@ public class PageAutoReloadScheduler {
                     throw new CaptchaException(ErrorEnum.ACCESS_DENIED);
                 }
 
-                if (isWelcomed(page)) {
-                    warn("Reload done, no captcha");
-                } else {
-                    if (isCaptchaClicked(page)) {
-                        warn("Reload done, captcha clicked");
-                    } else {
-                        error("Reload failed.");
-                    }
+                if (!isWelcomed(page)) {
+                    handleCaptcha(page);
                 }
             } catch (Exception e) {
                 error("Reload failed: " + e.getMessage());
             } finally {
                 PAGE_RELOAD_LOCK.unlock();
             }
-        } else {
-            warn("Reload canceled, in conversation");
         }
     }
 }

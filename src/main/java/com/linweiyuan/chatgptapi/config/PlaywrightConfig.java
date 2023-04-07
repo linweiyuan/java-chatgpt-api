@@ -58,12 +58,4 @@ public class PlaywrightConfig {
         warn("Try to handle captcha");
         return handleCaptcha(page);
     }
-
-    private Page handleCaptcha(Page page) {
-        if (isCaptchaClicked(page) && isWelcomed(page)) {
-            return page;
-        } else {
-            return handleCaptcha(page);
-        }
-    }
 }
