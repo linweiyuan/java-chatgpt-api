@@ -96,12 +96,6 @@ public class ChatGPTServiceImpl implements ChatGPTService {
 
                     conversationResponseData = conversationResponseData.substring(5);
                     fluxSink.next(conversationResponseData);
-
-                    // if send with "<|im_end|>", will break, but normal usage won't matter, don't want to make class to deserializable again
-                    if (conversationResponseData.contains("<|im_end|>")) {
-                        fluxSink.complete();
-                        break;
-                    }
                 }
             } finally {
                 PAGE_RELOAD_LOCK.unlock();
