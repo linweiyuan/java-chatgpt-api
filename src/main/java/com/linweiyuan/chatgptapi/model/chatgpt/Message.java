@@ -1,8 +1,10 @@
 package com.linweiyuan.chatgptapi.model.chatgpt;
 
-public record Message(
-        Author author,
-        Content content,
-        String id
-) {
+import lombok.Data;
+
+@Data
+public class Message {
+    private Author author;
+    private Content content;
+    private String id;
 }

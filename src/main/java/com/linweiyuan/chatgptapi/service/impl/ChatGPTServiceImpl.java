@@ -5,10 +5,7 @@ import com.linweiyuan.chatgptapi.annotation.EnabledOnChatGPT;
 import com.linweiyuan.chatgptapi.enums.ErrorEnum;
 import com.linweiyuan.chatgptapi.exception.ConversationException;
 import com.linweiyuan.chatgptapi.misc.Constant;
-import com.linweiyuan.chatgptapi.model.chatgpt.ConversationRequest;
-import com.linweiyuan.chatgptapi.model.chatgpt.FeedbackRequest;
-import com.linweiyuan.chatgptapi.model.chatgpt.GenerateTitleRequest;
-import com.linweiyuan.chatgptapi.model.chatgpt.UpdateConversationRequest;
+import com.linweiyuan.chatgptapi.model.chatgpt.*;
 import com.linweiyuan.chatgptapi.service.ChatGPTService;
 import com.microsoft.playwright.Page;
 import lombok.SneakyThrows;
@@ -63,6 +60,14 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                         // prevent page auto reload interrupting conversation
                         PAGE_RELOAD_LOCK.lock();
 
+                        // add support for old api
+                        var message = conversationRequest.messages().get(0);
+                        var author = message.getAuthor();
+                        if (author == null || author.getRole() == null) {
+                            author = new Author();
+                            author.setRole("user");
+                            message.setAuthor(author);
+                        }
                         String requestBody = objectMapper.writeValueAsString(conversationRequest);
                         page.evaluate("delete window.conversationResponseData;");
                         page.evaluate(getPostScriptForStartConversation(Constant.START_CONVERSATIONS_URL, getAuthorizationHeader(accessToken), requestBody));

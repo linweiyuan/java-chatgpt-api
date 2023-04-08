@@ -1,6 +1,8 @@
 package com.linweiyuan.chatgptapi.model.chatgpt;
 
-public record Author(
-        String role
-) {
+import lombok.Data;
+
+@Data
+public class Author {
+    private String role;
 }
