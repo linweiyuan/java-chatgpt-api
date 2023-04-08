@@ -80,12 +80,16 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                                 continue;
                             }
 
-                            conversationResponseData = Arrays.stream(conversationResponseData.split("\n"))
-                                    .map(String::trim)
-                                    .filter(s -> !s.isBlank() && !s.startsWith("event") && !s.startsWith("data: 2023"))
-                                    .reduce((a, b) -> b)
-                                    .orElse("[DONE]");
-
+                            //noinspection OptionalGetWithoutIsPresent
+                            conversationResponseData = Arrays.stream(conversationResponseData.split("\n\n"))
+                                    .filter(s ->
+                                            !s.isBlank() &&
+                                            !s.startsWith("event") &&
+                                            !s.startsWith("data: 2023") &&
+                                            !s.equals("data: [DONE]")
+                                    )
+                                    .reduce((first, last) -> last)
+                                    .get();
                             if (!temp.isBlank()) {
                                 if (temp.equals(conversationResponseData)) {
                                     continue;
@@ -93,14 +97,17 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                             }
                             temp = conversationResponseData;
 
-                            if (conversationResponseData.equals("429") || conversationResponseData.equals("[DONE]")) {
-                                fluxSink.next(conversationResponseData);
+                            conversationResponseData = conversationResponseData.substring(6);
+                            fluxSink.next(conversationResponseData);
+
+                            var endTurn = objectMapper.readValue(conversationResponseData, ConversationResponse.class)
+                                    .conversationResponseMessage()
+                                    .endTurn();
+                            if (endTurn) {
+                                fluxSink.next("[DONE]");
                                 fluxSink.complete();
                                 break;
                             }
-
-                            conversationResponseData = conversationResponseData.substring(5);
-                            fluxSink.next(conversationResponseData);
                         }
                     } catch (Exception ignored) {
                     } finally {
@@ -221,13 +228,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 xhr.setRequestHeader('Authorization', '%s');
                 xhr.setRequestHeader('Content-Type', 'application/json');
                 xhr.onreadystatechange = function() {
-                    if (xhr.readyState === xhr.LOADING && xhr.status === 200) {
-                        window.conversationResponseData = xhr.responseText;
-                    } else if (xhr.status === 429) {
-                        window.conversationResponseData = '429';
-                    } if (xhr.readyState === xhr.DONE) {
-                        window.conversationResponseData = '[DONE]';
-                    }
+                    window.conversationResponseData = xhr.responseText;
                 };
                 xhr.send(JSON.stringify(%s));
                 """.formatted(url, getAuthorizationHeader(accessToken), jsonString);
