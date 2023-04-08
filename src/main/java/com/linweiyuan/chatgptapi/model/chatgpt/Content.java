@@ -1,12 +1,13 @@
 package com.linweiyuan.chatgptapi.model.chatgpt;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Data;
 
 import java.util.List;
 
-public record Content(
-        @JsonProperty("content_type")
-        String contentType,
-        List<String> parts
-) {
+@Data
+public class Content {
+    @JsonProperty("content_type")
+    private String contentType;
+    private List<String> parts;
 }

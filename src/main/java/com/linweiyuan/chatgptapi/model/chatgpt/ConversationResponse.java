@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record ConversationResponse(
         @JsonProperty("message")
-        ConversationResponseMessage conversationResponseMessage
+        ConversationResponseMessage conversationResponseMessage,
+        @JsonProperty("conversation_id")
+        String conversationId
 ) {
 }

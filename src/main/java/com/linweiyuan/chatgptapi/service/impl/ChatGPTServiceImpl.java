@@ -1,5 +1,6 @@
 package com.linweiyuan.chatgptapi.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linweiyuan.chatgptapi.annotation.EnabledOnChatGPT;
 import com.linweiyuan.chatgptapi.enums.ErrorEnum;
@@ -12,9 +13,12 @@ import lombok.SneakyThrows;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -60,7 +64,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                         // prevent page auto reload interrupting conversation
                         PAGE_RELOAD_LOCK.lock();
 
-                        // add support for old api
+                        // add support for old chatgpt api
                         var message = conversationRequest.messages().get(0);
                         var author = message.getAuthor();
                         if (author == null || author.getRole() == null) {
@@ -68,52 +72,97 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                             author.setRole("user");
                             message.setAuthor(author);
                         }
-                        String requestBody = objectMapper.writeValueAsString(conversationRequest);
-                        page.evaluate("delete window.conversationResponseData;");
-                        page.evaluate(getPostScriptForStartConversation(Constant.START_CONVERSATIONS_URL, getAuthorizationHeader(accessToken), requestBody));
-
-                        // prevent handle multiple times
-                        var temp = "";
-                        while (true) {
-                            var conversationResponseData = (String) page.evaluate("() => window.conversationResponseData;");
-                            if (conversationResponseData == null) {
-                                continue;
-                            }
-
-                            //noinspection OptionalGetWithoutIsPresent
-                            conversationResponseData = Arrays.stream(conversationResponseData.split("\n\n"))
-                                    .filter(s ->
-                                            !s.isBlank() &&
-                                            !s.startsWith("event") &&
-                                            !s.startsWith("data: 2023") &&
-                                            !s.equals("data: [DONE]")
-                                    )
-                                    .reduce((first, last) -> last)
-                                    .get();
-                            if (!temp.isBlank()) {
-                                if (temp.equals(conversationResponseData)) {
-                                    continue;
-                                }
-                            }
-                            temp = conversationResponseData;
-
-                            conversationResponseData = conversationResponseData.substring(6);
-                            fluxSink.next(conversationResponseData);
-
-                            var endTurn = objectMapper.readValue(conversationResponseData, ConversationResponse.class)
-                                    .conversationResponseMessage()
-                                    .endTurn();
-                            if (endTurn) {
-                                fluxSink.next("[DONE]");
-                                fluxSink.complete();
-                                break;
-                            }
-                        }
+                        var oldContentToResponse = "";
+                        sendConversationRequest(accessToken, conversationRequest, oldContentToResponse, fluxSink);
                     } catch (Exception ignored) {
                     } finally {
                         PAGE_RELOAD_LOCK.unlock();
                     }
                 })
+        );
+    }
+
+    private void sendConversationRequest(String accessToken, ConversationRequest conversationRequest, String oldContentToResponse, FluxSink<String> fluxSink) throws JsonProcessingException {
+        String requestBody = objectMapper.writeValueAsString(conversationRequest);
+        page.evaluate("delete window.conversationResponseData;");
+        page.evaluate(getPostScriptForStartConversation(Constant.START_CONVERSATIONS_URL, getAuthorizationHeader(accessToken), requestBody));
+
+        // prevent handle multiple times
+        var temp = "";
+        ConversationResponse conversationResponse;
+        var maxTokens = false;
+        while (true) {
+            var conversationResponseData = (String) page.evaluate("() => window.conversationResponseData;");
+            if (conversationResponseData == null) {
+                continue;
+            }
+
+            //noinspection OptionalGetWithoutIsPresent
+            conversationResponseData = Arrays.stream(conversationResponseData.split("\n\n"))
+                    .filter(s ->
+                            !s.isBlank() &&
+                            !s.startsWith("event") &&
+                            !s.startsWith("data: 2023") &&
+                            !s.equals("data: [DONE]")
+                    )
+                    .reduce((first, last) -> last)
+                    .get();
+            if (!temp.isBlank()) {
+                if (temp.equals(conversationResponseData)) {
+                    continue;
+                }
+            }
+            temp = conversationResponseData;
+
+            conversationResponseData = conversationResponseData.substring(6);
+
+            conversationResponse = objectMapper.readValue(conversationResponseData, ConversationResponse.class);
+            var message = conversationResponse.conversationResponseMessage();
+            if (oldContentToResponse.isBlank()) {
+                fluxSink.next(conversationResponseData);
+            } else {
+                List<String> parts = message.content().getParts();
+                parts.set(0, oldContentToResponse + parts.get(0));
+
+                fluxSink.next(objectMapper.writeValueAsString(conversationResponse));
+            }
+
+            var finishDetails = message.metadata().finishDetails();
+            if (finishDetails != null && "max_tokens".equals(finishDetails.type())) {
+                maxTokens = true;
+                oldContentToResponse = message.content().getParts().get(0);
+                break;
+            }
+
+            var endTurn = message.endTurn();
+            if (endTurn) {
+                fluxSink.next("[DONE]");
+                fluxSink.complete();
+                break;
+            }
+        }
+        if (maxTokens) {
+            var newRequest = newConversationRequest(conversationRequest, conversationResponse);
+            sendConversationRequest(accessToken, newRequest, oldContentToResponse, fluxSink);
+        }
+    }
+
+    private static ConversationRequest newConversationRequest(ConversationRequest conversationRequest, ConversationResponse conversationResponse) {
+        var author = new Author();
+        author.setRole("user");
+        Content content = new Content();
+        content.setContentType("text");
+        content.setParts(List.of("continue"));
+        var message = new Message();
+        message.setAuthor(author);
+        message.setContent(content);
+        message.setId(UUID.randomUUID().toString());
+        return new ConversationRequest(
+                conversationRequest.action(),
+                List.of(message),
+                conversationRequest.model(),
+                conversationResponse.conversationResponseMessage().id(),
+                conversationResponse.conversationId()
         );
     }
 
