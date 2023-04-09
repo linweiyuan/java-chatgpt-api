@@ -97,16 +97,15 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 continue;
             }
 
-            //noinspection OptionalGetWithoutIsPresent
-            conversationResponseData = Arrays.stream(conversationResponseData.split("\n\n"))
-                    .filter(s ->
-                            !s.isBlank() &&
-                            !s.startsWith("event") &&
-                            !s.startsWith("data: 2023") &&
-                            !s.equals("data: [DONE]")
+            var datas = Arrays.stream(conversationResponseData.split("}\n\n"))
+                    .map(data -> data.startsWith("event") ? data.substring(49) : data)
+                    .filter(data ->
+                            !data.isBlank() &&
+                            !data.startsWith("data: [DONE]")
                     )
-                    .reduce((first, last) -> last)
-                    .get();
+                    .map(data -> data + "}")
+                    .toList();
+            conversationResponseData = datas.get(datas.size() - 1);
             if (!temp.isBlank()) {
                 if (temp.equals(conversationResponseData)) {
                     continue;
