@@ -4,7 +4,10 @@ import com.linweiyuan.chatgptapi.annotation.EnabledOnChatGPT;
 import com.linweiyuan.chatgptapi.enums.ErrorEnum;
 import com.linweiyuan.chatgptapi.exception.CaptchaException;
 import com.linweiyuan.chatgptapi.misc.Constant;
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.Browser;
+import com.microsoft.playwright.BrowserType;
+import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.options.LoadState;
 import com.microsoft.playwright.options.Proxy;
 import lombok.SneakyThrows;
@@ -36,12 +39,6 @@ public class PlaywrightConfig {
         Page page = context.newPage();
         page.navigate(Constant.CHATGPT_URL);
         page.waitForLoadState(LoadState.NETWORKIDLE);
-        try {
-            page.waitForCondition(() -> context.cookies().stream().anyMatch(cookie -> cookie.name.equals("cf_clearance")));
-        } catch (TimeoutError error) {
-            error(ErrorEnum.GET_CF_COOKIES_ERROR.message);
-            saveScreenshot(page);
-        }
 
         warn("There's a lot of checking to do, please wait...");
         warn("Access denied?");

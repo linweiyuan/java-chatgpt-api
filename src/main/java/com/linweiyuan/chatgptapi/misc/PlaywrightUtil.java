@@ -1,5 +1,6 @@
 package com.linweiyuan.chatgptapi.misc;
 
+import com.linweiyuan.chatgptapi.enums.ErrorEnum;
 import com.microsoft.playwright.*;
 import lombok.SneakyThrows;
 
@@ -70,7 +71,8 @@ public class PlaywrightUtil {
         }
     }
 
-    private static void tryToClickCaptcha(Page page) throws InterruptedException {
+    @SneakyThrows
+    private static void tryToClickCaptcha(Page page) {
         Locator iframe = page.getByTitle("Widget containing a Cloudflare security challenge");
 
         warn("Waiting for captcha phase 1");
@@ -88,6 +90,13 @@ public class PlaywrightUtil {
             }
 
             iframe.click();
+
+            try {
+                page.waitForCondition(() -> page.context().cookies().stream().anyMatch(cookie -> cookie.name.equals("cf_clearance")));
+            } catch (TimeoutError error) {
+                error(ErrorEnum.GET_CF_COOKIES_ERROR.message);
+                saveScreenshot(page);
+            }
 
             warn("Captcha should be clicked");
         } else if (style.equals("display: none;")) {
