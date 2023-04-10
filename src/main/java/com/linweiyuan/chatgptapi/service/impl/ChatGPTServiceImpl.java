@@ -52,7 +52,6 @@ public class ChatGPTServiceImpl implements ChatGPTService {
         if (Constant.ERROR_MESSAGE_GET_CONVERSATIONS.equals(responseText)) {
             throw new ConversationException(ErrorEnum.GET_CONVERSATIONS_ERROR);
         }
-
         return ResponseEntity.ok(responseText);
     }
 
@@ -174,6 +173,9 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                         Constant.ERROR_MESSAGE_GENERATE_TITLE
                 )
         );
+        if (Constant.ERROR_MESSAGE_GENERATE_TITLE.equals(responseText)) {
+            throw new ConversationException(ErrorEnum.GENERATE_TITLE_ERROR);
+        }
         return ResponseEntity.ok(responseText);
     }
 
@@ -187,6 +189,9 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                         Constant.ERROR_MESSAGE_GET_CONTENT
                 )
         );
+        if (Constant.ERROR_MESSAGE_GET_CONTENT.equals(responseText)) {
+            throw new ConversationException(ErrorEnum.GET_CONTENT_ERROR);
+        }
         return ResponseEntity.ok(responseText);
     }
 
@@ -206,6 +211,9 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                         Constant.ERROR_MESSAGE_UPDATE_CONVERSATION
                 )
         );
+        if (Constant.ERROR_MESSAGE_UPDATE_CONVERSATION.equals(responseText)) {
+            throw new ConversationException(ErrorEnum.UPDATE_CONVERSATION_ERROR);
+        }
         return ResponseEntity.ok((Boolean) objectMapper.readValue(responseText, Map.class).get("success"));
     }
 
@@ -221,6 +229,9 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                         Constant.ERROR_MESSAGE_CLEAR_CONVERSATIONS
                 )
         );
+        if (Constant.ERROR_MESSAGE_CLEAR_CONVERSATIONS.equals(responseText)) {
+            throw new ConversationException(ErrorEnum.CLEAR_CONVERSATIONS_ERROR);
+        }
         return ResponseEntity.ok((Boolean) objectMapper.readValue(responseText, Map.class).get("success"));
     }
 
@@ -236,6 +247,9 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                         Constant.ERROR_MESSAGE_FEEDBACK_MESSAGE
                 )
         );
+        if (Constant.ERROR_MESSAGE_FEEDBACK_MESSAGE.equals(responseText)) {
+            throw new ConversationException(ErrorEnum.FEEDBACK_MESSAGE_ERROR);
+        }
         return ResponseEntity.ok((String) objectMapper.readValue(responseText, Map.class).get("rating"));
     }
 
