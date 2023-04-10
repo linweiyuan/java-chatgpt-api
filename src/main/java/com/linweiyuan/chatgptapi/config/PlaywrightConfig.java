@@ -51,7 +51,7 @@ public class PlaywrightConfig {
 
         warn("At capacity?");
         if (isAtCapacity(page)) {
-            throw new CaptchaException(ErrorEnum.ACCESS_DENIED);
+            throw new CaptchaException(ErrorEnum.AT_CAPACITY);
         }
         info("No");
 
