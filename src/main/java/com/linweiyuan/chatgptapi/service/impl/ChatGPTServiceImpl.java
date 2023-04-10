@@ -1,6 +1,5 @@
 package com.linweiyuan.chatgptapi.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linweiyuan.chatgptapi.annotation.EnabledOnChatGPT;
 import com.linweiyuan.chatgptapi.enums.ErrorEnum;
@@ -15,15 +14,16 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static com.linweiyuan.chatgptapi.misc.Constant.PAGE_RELOAD_LOCK;
 import static com.linweiyuan.chatgptapi.misc.HeaderUtil.getAuthorizationHeader;
+import static com.linweiyuan.chatgptapi.misc.LogUtil.error;
 
 @EnabledOnChatGPT
 @Service
@@ -74,7 +74,8 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                         }
                         var oldContentToResponse = "";
                         sendConversationRequest(accessToken, conversationRequest, oldContentToResponse, fluxSink);
-                    } catch (Exception ignored) {
+                    } catch (Exception e) {
+                        error(e.getLocalizedMessage());
                     } finally {
                         PAGE_RELOAD_LOCK.unlock();
                     }
@@ -82,7 +83,8 @@ public class ChatGPTServiceImpl implements ChatGPTService {
         );
     }
 
-    private void sendConversationRequest(String accessToken, ConversationRequest conversationRequest, String oldContentToResponse, FluxSink<String> fluxSink) throws JsonProcessingException {
+    @SneakyThrows
+    private void sendConversationRequest(String accessToken, ConversationRequest conversationRequest, String oldContentToResponse, FluxSink<String> fluxSink) {
         String requestBody = objectMapper.writeValueAsString(conversationRequest);
         page.evaluate("delete window.conversationResponseData;");
         page.evaluate(getPostScriptForStartConversation(Constant.START_CONVERSATIONS_URL, getAuthorizationHeader(accessToken), requestBody));
@@ -93,27 +95,18 @@ public class ChatGPTServiceImpl implements ChatGPTService {
         var maxTokens = false;
         while (true) {
             var conversationResponseData = (String) page.evaluate("() => window.conversationResponseData;");
-            if (conversationResponseData == null) {
+            if (conversationResponseData == null || conversationResponseData.isBlank()) {
+                TimeUnit.SECONDS.sleep(1);
                 continue;
             }
 
-            var datas = Arrays.stream(conversationResponseData.split("}\n\n"))
-                    .map(data -> data.startsWith("event") ? data.substring(49) : data)
-                    .filter(data ->
-                            !data.isBlank() &&
-                            !data.startsWith("data: [DONE]")
-                    )
-                    .map(data -> data + "}")
-                    .toList();
-            conversationResponseData = datas.get(datas.size() - 1);
             if (!temp.isBlank()) {
                 if (temp.equals(conversationResponseData)) {
+                    TimeUnit.MILLISECONDS.sleep(10);
                     continue;
                 }
             }
             temp = conversationResponseData;
-
-            conversationResponseData = conversationResponseData.substring(6);
 
             conversationResponse = objectMapper.readValue(conversationResponseData, ConversationResponse.class);
             var message = conversationResponse.conversationResponseMessage();
@@ -269,14 +262,40 @@ public class ChatGPTServiceImpl implements ChatGPTService {
     private String getPostScriptForStartConversation(String url, String accessToken, String jsonString) {
         return """
                 let conversationResponseData;
+                let temp;
 
                 const xhr = new XMLHttpRequest();
-                xhr.open('POST', '%s', true);
+                xhr.open('POST', '%s');
                 xhr.setRequestHeader('Accept', 'text/event-stream');
                 xhr.setRequestHeader('Authorization', '%s');
                 xhr.setRequestHeader('Content-Type', 'application/json');
                 xhr.onreadystatechange = function() {
-                    window.conversationResponseData = xhr.responseText;
+                    if (xhr.readyState === xhr.LOADING || xhr.readyState === xhr.DONE) {
+                        const dataArray = xhr.responseText.substr(xhr.seenBytes).split("\\n\\n");
+                        dataArray.pop(); // empty string
+                        if (dataArray.length) {
+                            let data = dataArray.pop(); // target data
+                            if (data === 'data: [DONE]') { // this DONE will break the ending handling
+                                if (dataArray.length) {
+                                    data = dataArray.pop();
+                                } else {
+                                    data = temp;
+                                }
+                            } else if (data.startsWith('event')) {
+                                data = data.substring(49);
+                                if (!data) {
+                                    data = temp;
+                                }
+                            }
+                            if (data) {
+                                if (!temp || temp !== data) {
+                                    temp = data;
+                                    window.conversationResponseData = data.substring(6);
+                                }
+                            }
+                        }
+                    }
+                    xhr.seenBytes = xhr.responseText.length;
                 };
                 xhr.send(JSON.stringify(%s));
                 """.formatted(url, getAuthorizationHeader(accessToken), jsonString);
