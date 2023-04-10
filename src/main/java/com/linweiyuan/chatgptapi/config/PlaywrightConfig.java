@@ -30,12 +30,14 @@ public class PlaywrightConfig {
             launchOptions = launchOptions.setProxy(new Proxy(proxy));
         }
 
-        // Chromium won't work
+        // Chromium can not get cf_cookies in headless mode
         Browser browser = Playwright.create()
                 .firefox()
                 .launch(launchOptions);
 
         var context = browser.newContext();
+        context.addInitScript("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});");
+
         Page page = context.newPage();
         page.navigate(Constant.CHATGPT_URL);
         page.waitForLoadState(LoadState.NETWORKIDLE);

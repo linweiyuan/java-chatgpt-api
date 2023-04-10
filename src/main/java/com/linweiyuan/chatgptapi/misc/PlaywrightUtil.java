@@ -1,7 +1,11 @@
 package com.linweiyuan.chatgptapi.misc;
 
 import com.linweiyuan.chatgptapi.enums.ErrorEnum;
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.Frame;
+import com.microsoft.playwright.Page;
+import com.microsoft.playwright.PlaywrightException;
+import com.microsoft.playwright.TimeoutError;
+import com.microsoft.playwright.options.AriaRole;
 import lombok.SneakyThrows;
 
 import java.io.IOException;
@@ -60,10 +64,8 @@ public class PlaywrightUtil {
     public static boolean isCaptchaClicked(Page page) {
         try {
             var title = page.title();
-            if (title.isBlank()) {
+            if (title.isBlank() || title.equals("Just a moment...")) {
                 tryToClickCaptcha(page);
-            } else if (title.equals("Just a moment...")) {
-                saveScreenshot(page);
             }
             return true;
         } catch (PlaywrightException e) {
@@ -73,35 +75,33 @@ public class PlaywrightUtil {
 
     @SneakyThrows
     private static void tryToClickCaptcha(Page page) {
-        Locator iframe = page.getByTitle("Widget containing a Cloudflare security challenge");
-
-        warn("Waiting for captcha phase 1");
+        var iframe = page.getByTitle("Widget containing a Cloudflare security challenge");
         while (!iframe.isVisible()) {
             TimeUnit.SECONDS.sleep(INTERVAL);
         }
+        page.frames().stream()
+                .filter(frame -> frame.url().startsWith("https://challenges.cloudflare.com"))
+                .findFirst()
+                .ifPresentOrElse(PlaywrightUtil::clickCheckBox, iframe::click);
+        try {
+            page.waitForCondition(() -> page.context().cookies().stream().anyMatch(cookie -> cookie.name.equals("cf_clearance")), new Page.WaitForConditionOptions().setTimeout(5_000));
+        } catch (TimeoutError error) {
+            error(ErrorEnum.GET_CF_COOKIES_ERROR.message);
 
-        Frame frame = page.frames().get(2);
-        ElementHandle content = frame.querySelector("#content");
-        String style = content.getAttribute("style");
-        if (style.equals("display: block;")) {
-            warn("Waiting for captcha phase 2");
-            while (!frame.getByText("Verify you are human").isVisible()) {
-                TimeUnit.SECONDS.sleep(INTERVAL);
-            }
+            saveScreenshot(page);
 
-            iframe.click();
-
-            try {
-                page.waitForCondition(() -> page.context().cookies().stream().anyMatch(cookie -> cookie.name.equals("cf_clearance")));
-            } catch (TimeoutError error) {
-                error(ErrorEnum.GET_CF_COOKIES_ERROR.message);
-                saveScreenshot(page);
-            }
-
-            warn("Captcha should be clicked");
-        } else if (style.equals("display: none;")) {
             page.reload();
+            handleCaptcha(page);
         }
+    }
+
+    @SneakyThrows
+    private static void clickCheckBox(Frame frame) {
+        var checkbox = frame.getByRole(AriaRole.CHECKBOX);
+        while (!checkbox.isVisible()) {
+            TimeUnit.SECONDS.sleep(INTERVAL);
+        }
+        checkbox.check();
     }
 
     public static Page handleCaptcha(Page page) {
@@ -115,8 +115,7 @@ public class PlaywrightUtil {
     public static void saveScreenshot(Page page) throws IOException {
         var fileName = "/tmp/captcha-" + DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss").format(LocalDateTime.now(ZoneId.of("Asia/Shanghai"))) + ".png";
         Files.write(Path.of(fileName), page.screenshot());
-        warn("Failed to handle captcha, please copy this image from container to check what happens use below command");
+        warn("Failed to handle captcha, please use below command to copy the screenshot from container to check what happens");
         info("docker cp " + System.getenv("HOSTNAME") + ":" + fileName + " .");
-        System.exit(1);
     }
 }
