@@ -11,6 +11,7 @@ import com.microsoft.playwright.Page;
 import lombok.SneakyThrows;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 
@@ -120,8 +121,14 @@ public class ChatGPTServiceImpl implements ChatGPTService {
 
             var finishDetails = message.metadata().finishDetails();
             if (finishDetails != null && "max_tokens".equals(finishDetails.type())) {
-                maxTokens = true;
-                oldContentToResponse = message.content().getParts().get(0);
+                var continueText = conversationRequest.continueText();
+                if (StringUtils.hasText(continueText)) {
+                    maxTokens = true;
+                    oldContentToResponse = message.content().getParts().get(0);
+                } else {
+                    fluxSink.next("[DONE]");
+                    fluxSink.complete();
+                }
                 break;
             }
 
@@ -153,7 +160,8 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 List.of(message),
                 conversationRequest.model(),
                 conversationResponse.conversationResponseMessage().id(),
-                conversationResponse.conversationId()
+                conversationResponse.conversationId(),
+                conversationRequest.continueText()
         );
     }
 

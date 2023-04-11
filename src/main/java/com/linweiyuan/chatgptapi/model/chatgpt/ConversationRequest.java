@@ -13,6 +13,8 @@ public record ConversationRequest(
         String parentMessageId,
         @JsonProperty("conversation_id")
         @JsonInclude(JsonInclude.Include.NON_EMPTY)
-        String conversationId
+        String conversationId,
+        @JsonProperty("continue_text")
+        String continueText
 ) {
 }
