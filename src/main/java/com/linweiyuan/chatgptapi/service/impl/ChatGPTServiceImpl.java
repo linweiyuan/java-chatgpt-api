@@ -139,7 +139,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 break;
             }
         }
-        if (maxTokens) {
+        if (maxTokens && StringUtils.hasText(conversationRequest.continueText())) {
             var newRequest = newConversationRequest(conversationRequest, conversationResponse);
             sendConversationRequest(accessToken, newRequest, oldContentToResponse, fluxSink);
         }
