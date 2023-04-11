@@ -5,6 +5,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class Constant {
     public static final String ENV_VAR_CHATGPT = "CHATGPT";
+    public static final String WELCOME_TEXT = "Welcome to ChatGPT";
     public static final String CHATGPT_URL = "https://chat.openai.com";
     public static final String CHATGPT_API_URL = CHATGPT_URL + "/backend-api";
     public static final String GET_CONVERSATIONS_URL = CHATGPT_API_URL + "/conversations?offset=%d&limit=%d";
@@ -25,8 +26,6 @@ public class Constant {
     public static final String ERROR_MESSAGE_CLEAR_CONVERSATIONS = "Failed to clear conversations.";
     public static final String ERROR_MESSAGE_FEEDBACK_MESSAGE = "Failed to add feedback.";
     public static final String ERROR_MESSAGE_ACCESS_DENIED = "Access denied.";
-    public static final String ERROR_MESSAGE_AT_CAPACITY = "ChatGPT is at capacity right now.";
-    public static final String ERROR_MESSAGE_GET_CF_COOKIES = "Failed to get cf cookies.";
 
     public static final Lock PAGE_RELOAD_LOCK = new ReentrantLock(true);
 

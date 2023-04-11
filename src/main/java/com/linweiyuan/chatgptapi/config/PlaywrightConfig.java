@@ -1,9 +1,7 @@
 package com.linweiyuan.chatgptapi.config;
 
 import com.linweiyuan.chatgptapi.annotation.EnabledOnChatGPT;
-import com.linweiyuan.chatgptapi.enums.ErrorEnum;
 import com.linweiyuan.chatgptapi.exception.CaptchaException;
-import com.linweiyuan.chatgptapi.misc.Constant;
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
@@ -14,7 +12,10 @@ import lombok.SneakyThrows;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import static com.linweiyuan.chatgptapi.misc.LogUtil.*;
+import static com.linweiyuan.chatgptapi.enums.ErrorEnum.ACCESS_DENIED;
+import static com.linweiyuan.chatgptapi.misc.Constant.CHATGPT_URL;
+import static com.linweiyuan.chatgptapi.misc.Constant.WELCOME_TEXT;
+import static com.linweiyuan.chatgptapi.misc.LogUtil.info;
 import static com.linweiyuan.chatgptapi.misc.PlaywrightUtil.*;
 
 @SuppressWarnings("resource")
@@ -39,29 +40,19 @@ public class PlaywrightConfig {
         context.addInitScript("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});");
 
         Page page = context.newPage();
-        page.navigate(Constant.CHATGPT_URL);
+        page.navigate(CHATGPT_URL);
         page.waitForLoadState(LoadState.NETWORKIDLE);
+        page.frames().forEach(frame -> frame.waitForLoadState(LoadState.NETWORKIDLE));
 
-        warn("There's a lot of checking to do, please wait...");
-        warn("Access denied?");
-        if (isAccessDenied(page)) {
-            throw new CaptchaException(ErrorEnum.ACCESS_DENIED);
-        }
-        info("No");
-
-        warn("At capacity?");
-        if (isAtCapacity(page)) {
-            throw new CaptchaException(ErrorEnum.AT_CAPACITY);
-        }
-        info("No");
-
-        warn("Needs handle captcha?");
-        if (isWelcomed(page)) {
+        if (isReady(page)) {
+            info(WELCOME_TEXT);
             return page;
         }
-        error("Yes");
 
-        warn("Try to handle captcha");
+        if (isAccessDenied(page)) {
+            throw new CaptchaException(ACCESS_DENIED);
+        }
+
         return handleCaptcha(page);
     }
 }
