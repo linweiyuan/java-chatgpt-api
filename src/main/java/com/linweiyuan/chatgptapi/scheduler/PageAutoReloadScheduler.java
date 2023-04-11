@@ -20,9 +20,9 @@ public class PageAutoReloadScheduler {
         this.page = page;
     }
 
-    // auto reload every 3 minutes if not in conversation
-    @Scheduled(fixedRate = 1000 * 60 * 3, initialDelay = 1000 * 10)
-    public void refresh() {
+    // auto reload every 1 minutes if not in conversation, initial delay for 10 seconds
+    @Scheduled(fixedRate = 60_000, initialDelay = 10_000)
+    public void reload() {
         if (PAGE_RELOAD_LOCK.tryLock()) {
             try {
                 page.reload();
