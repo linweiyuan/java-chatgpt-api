@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import static com.linweiyuan.chatgptapi.misc.Constant.PAGE_RELOAD_LOCK;
 import static com.linweiyuan.chatgptapi.misc.HeaderUtil.getAuthorizationHeader;
@@ -51,6 +50,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 )
         );
         if (Constant.ERROR_MESSAGE_GET_CONVERSATIONS.equals(responseText)) {
+            page.reload();
             throw new ConversationException(ErrorEnum.GET_CONVERSATIONS_ERROR);
         }
         return ResponseEntity.ok(responseText);
@@ -96,13 +96,11 @@ public class ChatGPTServiceImpl implements ChatGPTService {
         while (true) {
             var conversationResponseData = (String) page.evaluate("() => window.conversationResponseData;");
             if (conversationResponseData == null || conversationResponseData.isBlank()) {
-                TimeUnit.SECONDS.sleep(1);
                 continue;
             }
 
             if (!temp.isBlank()) {
                 if (temp.equals(conversationResponseData)) {
-                    TimeUnit.MILLISECONDS.sleep(10);
                     continue;
                 }
             }
@@ -182,6 +180,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 )
         );
         if (Constant.ERROR_MESSAGE_GENERATE_TITLE.equals(responseText)) {
+            page.reload();
             throw new ConversationException(ErrorEnum.GENERATE_TITLE_ERROR);
         }
         return ResponseEntity.ok(responseText);
@@ -198,6 +197,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 )
         );
         if (Constant.ERROR_MESSAGE_GET_CONTENT.equals(responseText)) {
+            page.reload();
             throw new ConversationException(ErrorEnum.GET_CONTENT_ERROR);
         }
         return ResponseEntity.ok(responseText);
@@ -220,6 +220,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 )
         );
         if (Constant.ERROR_MESSAGE_UPDATE_CONVERSATION.equals(responseText)) {
+            page.reload();
             throw new ConversationException(ErrorEnum.UPDATE_CONVERSATION_ERROR);
         }
         return ResponseEntity.ok((Boolean) objectMapper.readValue(responseText, Map.class).get("success"));
@@ -238,6 +239,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 )
         );
         if (Constant.ERROR_MESSAGE_CLEAR_CONVERSATIONS.equals(responseText)) {
+            page.reload();
             throw new ConversationException(ErrorEnum.CLEAR_CONVERSATIONS_ERROR);
         }
         return ResponseEntity.ok((Boolean) objectMapper.readValue(responseText, Map.class).get("success"));
@@ -256,6 +258,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 )
         );
         if (Constant.ERROR_MESSAGE_FEEDBACK_MESSAGE.equals(responseText)) {
+            page.reload();
             throw new ConversationException(ErrorEnum.FEEDBACK_MESSAGE_ERROR);
         }
         return ResponseEntity.ok((String) objectMapper.readValue(responseText, Map.class).get("rating"));
