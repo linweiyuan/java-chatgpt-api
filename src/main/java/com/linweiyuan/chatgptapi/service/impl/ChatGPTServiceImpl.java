@@ -10,7 +10,6 @@ import com.linweiyuan.chatgptapi.model.chatgpt.*;
 import com.linweiyuan.chatgptapi.service.ChatGPTService;
 import com.microsoft.playwright.Page;
 import lombok.SneakyThrows;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -102,8 +101,8 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 continue;
             }
 
-            if (conversationResponseData.substring(0, 3).equals(Integer.toString(HttpStatus.TOO_MANY_REQUESTS.value()))) {
-                fluxSink.error(new ConversationException(HttpStatus.TOO_MANY_REQUESTS.value(), conversationResponseData.substring(3)));
+            if (conversationResponseData.charAt(0) == '4') {
+                fluxSink.error(new ConversationException(Integer.parseInt(conversationResponseData.substring(0, 3)), conversationResponseData.substring(3)));
                 fluxSink.complete();
                 break;
             }
@@ -312,23 +311,37 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 xhr.setRequestHeader('Content-Type', 'application/json');
                 xhr.onreadystatechange = function() {
                     if (xhr.readyState === xhr.LOADING || xhr.readyState === xhr.DONE) {
-                        if (xhr.status != 200) {
-                            window.conversationResponseData = xhr.status + JSON.parse(xhr.responseText).detail; // 429 and ?
-                        } else {
-                            const dataArray = xhr.responseText.substr(xhr.seenBytes).split("\\n\\n");
-                            dataArray.pop(); // empty string
-                            if (dataArray.length) {
-                                let data = dataArray.pop(); // target data
-                                if (data === 'data: [DONE]') { // this DONE will break the ending handling
-                                    if (dataArray.length) {
-                                        data = dataArray.pop();
+                        switch (xhr.status) {
+                            case 200: {
+                                const dataArray = xhr.responseText.substr(xhr.seenBytes).split("\\n\\n");
+                                dataArray.pop(); // empty string
+                                if (dataArray.length) {
+                                    let data = dataArray.pop(); // target data
+                                    if (data === 'data: [DONE]') { // this DONE will break the ending handling
+                                        if (dataArray.length) {
+                                            data = dataArray.pop();
+                                        }
+                                    } else if (data.startsWith('event')) {
+                                        data = data.substring(49);
                                     }
-                                } else if (data.startsWith('event')) {
-                                    data = data.substring(49);
+                                    if (data) {
+                                        window.conversationResponseData = data.substring(6);
+                                    }
                                 }
-                                if (data) {
-                                    window.conversationResponseData = data.substring(6);
-                                }
+                                break;
+                            }
+                            case 413: {
+                                window.conversationResponseData = xhr.status + JSON.parse(xhr.responseText).detail.message;
+                                break;
+                            }
+                            case 422: {
+                                const detail = JSON.parse(xhr.responseText).detail[0];
+                                window.conversationResponseData = xhr.status + detail.loc + ' -> ' + detail.msg;
+                                break;
+                            }
+                            case 429: {
+                                window.conversationResponseData = xhr.status + JSON.parse(xhr.responseText).detail;
+                                break;
                             }
                         }
                         xhr.seenBytes = xhr.responseText.length;
