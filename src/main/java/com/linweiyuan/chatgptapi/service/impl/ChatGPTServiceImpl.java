@@ -10,6 +10,7 @@ import com.linweiyuan.chatgptapi.model.chatgpt.*;
 import com.linweiyuan.chatgptapi.service.ChatGPTService;
 import com.microsoft.playwright.Page;
 import lombok.SneakyThrows;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -102,7 +103,11 @@ public class ChatGPTServiceImpl implements ChatGPTService {
             }
 
             if (conversationResponseData.charAt(0) == '4') {
-                fluxSink.error(new ConversationException(Integer.parseInt(conversationResponseData.substring(0, 3)), conversationResponseData.substring(3)));
+                var statusCode = Integer.parseInt(conversationResponseData.substring(0, 3));
+                if (statusCode == HttpStatus.FORBIDDEN.value()) {
+                    page.reload();
+                }
+                fluxSink.error(new ConversationException(statusCode, conversationResponseData.substring(3)));
                 fluxSink.complete();
                 break;
             }
@@ -328,6 +333,10 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                                         window.conversationResponseData = data.substring(6);
                                     }
                                 }
+                                break;
+                            }
+                            case 403: {
+                                window.conversationResponseData = xhr.status + 'Please retry (403).';
                                 break;
                             }
                             case 413: {
