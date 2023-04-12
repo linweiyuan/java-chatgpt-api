@@ -28,6 +28,7 @@ public class Constant {
     public static final String ERROR_MESSAGE_ACCESS_DENIED = "Access denied.";
 
     public static final Lock PAGE_RELOAD_LOCK = new ReentrantLock(true);
+    public static final String DONE_FLAG = "[DONE]";
 
     public static final String API_URL = "https://api.openai.com";
     private static final String API_VERSION = "v1";

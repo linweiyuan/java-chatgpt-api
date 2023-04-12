@@ -10,6 +10,7 @@ import lombok.SneakyThrows;
 
 import java.util.concurrent.TimeUnit;
 
+import static com.linweiyuan.chatgptapi.misc.Constant.PAGE_RELOAD_LOCK;
 import static com.linweiyuan.chatgptapi.misc.LogUtil.error;
 import static com.linweiyuan.chatgptapi.misc.LogUtil.warn;
 
@@ -86,6 +87,24 @@ public class PlaywrightUtil {
             return page;
         } else {
             return handleCaptcha(page);
+        }
+    }
+
+    public static void tryToReload(Page page) {
+        if (PAGE_RELOAD_LOCK.tryLock()) {
+            try {
+                page.reload();
+                page.waitForLoadState(LoadState.NETWORKIDLE);
+
+                if (!isReady(page)) {
+                    handleCaptcha(page);
+                }
+            } catch (Exception e) {
+                // when in 10th minute, reload will fail, but after reload again here, then it will works fine
+                page.reload();
+            } finally {
+                PAGE_RELOAD_LOCK.unlock();
+            }
         }
     }
 }

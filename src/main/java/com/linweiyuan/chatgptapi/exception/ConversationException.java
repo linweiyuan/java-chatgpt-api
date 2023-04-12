@@ -12,4 +12,10 @@ public class ConversationException extends RuntimeException {
 
         this.code = errorEnum.code;
     }
+
+    public ConversationException(int code, String message) {
+        super(message);
+
+        this.code = code;
+    }
 }

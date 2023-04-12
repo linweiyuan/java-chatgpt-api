@@ -5,10 +5,12 @@ import com.linweiyuan.chatgptapi.annotation.EnabledOnChatGPT;
 import com.linweiyuan.chatgptapi.enums.ErrorEnum;
 import com.linweiyuan.chatgptapi.exception.ConversationException;
 import com.linweiyuan.chatgptapi.misc.Constant;
+import com.linweiyuan.chatgptapi.misc.PlaywrightUtil;
 import com.linweiyuan.chatgptapi.model.chatgpt.*;
 import com.linweiyuan.chatgptapi.service.ChatGPTService;
 import com.microsoft.playwright.Page;
 import lombok.SneakyThrows;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -20,7 +22,9 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
+import static com.linweiyuan.chatgptapi.misc.Constant.DONE_FLAG;
 import static com.linweiyuan.chatgptapi.misc.Constant.PAGE_RELOAD_LOCK;
 import static com.linweiyuan.chatgptapi.misc.HeaderUtil.getAuthorizationHeader;
 import static com.linweiyuan.chatgptapi.misc.LogUtil.error;
@@ -50,13 +54,12 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 )
         );
         if (Constant.ERROR_MESSAGE_GET_CONVERSATIONS.equals(responseText)) {
-            page.reload();
+            PlaywrightUtil.tryToReload(page);
             throw new ConversationException(ErrorEnum.GET_CONVERSATIONS_ERROR);
         }
         return ResponseEntity.ok(responseText);
     }
 
-    @SneakyThrows
     @Override
     public Flux<String> startConversation(String accessToken, ConversationRequest conversationRequest) {
         return Flux.create(fluxSink -> executorService.submit(() -> {
@@ -91,12 +94,24 @@ public class ChatGPTServiceImpl implements ChatGPTService {
 
         // prevent handle multiple times
         var temp = "";
-        ConversationResponse conversationResponse;
+        ConversationResponse conversationResponse = null;
         var maxTokens = false;
         while (true) {
             var conversationResponseData = (String) page.evaluate("() => window.conversationResponseData;");
             if (conversationResponseData == null || conversationResponseData.isBlank()) {
                 continue;
+            }
+
+            if (conversationResponseData.substring(0, 3).equals(Integer.toString(HttpStatus.TOO_MANY_REQUESTS.value()))) {
+                fluxSink.error(new ConversationException(HttpStatus.TOO_MANY_REQUESTS.value(), conversationResponseData.substring(3)));
+                fluxSink.complete();
+                break;
+            }
+
+            if (conversationResponseData.equals(DONE_FLAG)) {
+                fluxSink.next(DONE_FLAG);
+                fluxSink.complete();
+                break;
             }
 
             if (!temp.isBlank()) {
@@ -124,7 +139,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                     maxTokens = true;
                     oldContentToResponse = message.content().getParts().get(0);
                 } else {
-                    fluxSink.next("[DONE]");
+                    fluxSink.next(DONE_FLAG);
                     fluxSink.complete();
                 }
                 break;
@@ -132,12 +147,14 @@ public class ChatGPTServiceImpl implements ChatGPTService {
 
             var endTurn = message.endTurn();
             if (endTurn) {
-                fluxSink.next("[DONE]");
+                fluxSink.next(DONE_FLAG);
                 fluxSink.complete();
                 break;
             }
         }
         if (maxTokens && StringUtils.hasText(conversationRequest.continueText())) {
+            TimeUnit.SECONDS.sleep(1);
+
             var newRequest = newConversationRequest(conversationRequest, conversationResponse);
             sendConversationRequest(accessToken, newRequest, oldContentToResponse, fluxSink);
         }
@@ -180,7 +197,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 )
         );
         if (Constant.ERROR_MESSAGE_GENERATE_TITLE.equals(responseText)) {
-            page.reload();
+            PlaywrightUtil.tryToReload(page);
             throw new ConversationException(ErrorEnum.GENERATE_TITLE_ERROR);
         }
         return ResponseEntity.ok(responseText);
@@ -197,7 +214,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 )
         );
         if (Constant.ERROR_MESSAGE_GET_CONTENT.equals(responseText)) {
-            page.reload();
+            PlaywrightUtil.tryToReload(page);
             throw new ConversationException(ErrorEnum.GET_CONTENT_ERROR);
         }
         return ResponseEntity.ok(responseText);
@@ -220,7 +237,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 )
         );
         if (Constant.ERROR_MESSAGE_UPDATE_CONVERSATION.equals(responseText)) {
-            page.reload();
+            PlaywrightUtil.tryToReload(page);
             throw new ConversationException(ErrorEnum.UPDATE_CONVERSATION_ERROR);
         }
         return ResponseEntity.ok((Boolean) objectMapper.readValue(responseText, Map.class).get("success"));
@@ -239,7 +256,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 )
         );
         if (Constant.ERROR_MESSAGE_CLEAR_CONVERSATIONS.equals(responseText)) {
-            page.reload();
+            PlaywrightUtil.tryToReload(page);
             throw new ConversationException(ErrorEnum.CLEAR_CONVERSATIONS_ERROR);
         }
         return ResponseEntity.ok((Boolean) objectMapper.readValue(responseText, Map.class).get("success"));
@@ -258,7 +275,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 )
         );
         if (Constant.ERROR_MESSAGE_FEEDBACK_MESSAGE.equals(responseText)) {
-            page.reload();
+            PlaywrightUtil.tryToReload(page);
             throw new ConversationException(ErrorEnum.FEEDBACK_MESSAGE_ERROR);
         }
         return ResponseEntity.ok((String) objectMapper.readValue(responseText, Map.class).get("rating"));
@@ -287,7 +304,6 @@ public class ChatGPTServiceImpl implements ChatGPTService {
     private String getPostScriptForStartConversation(String url, String accessToken, String jsonString) {
         return """
                 let conversationResponseData;
-                let temp;
 
                 const xhr = new XMLHttpRequest();
                 xhr.open('POST', '%s');
@@ -296,31 +312,27 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 xhr.setRequestHeader('Content-Type', 'application/json');
                 xhr.onreadystatechange = function() {
                     if (xhr.readyState === xhr.LOADING || xhr.readyState === xhr.DONE) {
-                        const dataArray = xhr.responseText.substr(xhr.seenBytes).split("\\n\\n");
-                        dataArray.pop(); // empty string
-                        if (dataArray.length) {
-                            let data = dataArray.pop(); // target data
-                            if (data === 'data: [DONE]') { // this DONE will break the ending handling
-                                if (dataArray.length) {
-                                    data = dataArray.pop();
-                                } else {
-                                    data = temp;
+                        if (xhr.status != 200) {
+                            window.conversationResponseData = xhr.status + JSON.parse(xhr.responseText).detail; // 429 and ?
+                        } else {
+                            const dataArray = xhr.responseText.substr(xhr.seenBytes).split("\\n\\n");
+                            dataArray.pop(); // empty string
+                            if (dataArray.length) {
+                                let data = dataArray.pop(); // target data
+                                if (data === 'data: [DONE]') { // this DONE will break the ending handling
+                                    if (dataArray.length) {
+                                        data = dataArray.pop();
+                                    }
+                                } else if (data.startsWith('event')) {
+                                    data = data.substring(49);
                                 }
-                            } else if (data.startsWith('event')) {
-                                data = data.substring(49);
-                                if (!data) {
-                                    data = temp;
-                                }
-                            }
-                            if (data) {
-                                if (!temp || temp !== data) {
-                                    temp = data;
+                                if (data) {
                                     window.conversationResponseData = data.substring(6);
                                 }
                             }
                         }
+                        xhr.seenBytes = xhr.responseText.length;
                     }
-                    xhr.seenBytes = xhr.responseText.length;
                 };
                 xhr.send(JSON.stringify(%s));
                 """.formatted(url, getAuthorizationHeader(accessToken), jsonString);
