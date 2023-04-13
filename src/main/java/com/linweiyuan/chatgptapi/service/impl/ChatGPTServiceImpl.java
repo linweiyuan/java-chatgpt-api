@@ -102,7 +102,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 continue;
             }
 
-            if (conversationResponseData.charAt(0) == '4') {
+            if (conversationResponseData.charAt(0) == '4' || conversationResponseData.charAt(0) == '5') {
                 var statusCode = Integer.parseInt(conversationResponseData.substring(0, 3));
                 if (statusCode == HttpStatus.FORBIDDEN.value()) {
                     page.reload();
@@ -351,6 +351,10 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                                 }
                                 case 429: {
                                     window.conversationResponseData = xhr.status + JSON.parse(xhr.responseText).detail;
+                                    break;
+                                }
+                                case 500: {
+                                    window.conversationResponseData = xhr.status + 'Unknown error.';
                                     break;
                                 }
                             }
