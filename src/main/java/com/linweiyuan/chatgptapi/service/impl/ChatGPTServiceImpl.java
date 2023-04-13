@@ -169,7 +169,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
         author.setRole("user");
         Content content = new Content();
         content.setContentType("text");
-        content.setParts(List.of("continue"));
+        content.setParts(List.of(conversationRequest.continueText()));
         var message = new Message();
         message.setAuthor(author);
         message.setContent(content);

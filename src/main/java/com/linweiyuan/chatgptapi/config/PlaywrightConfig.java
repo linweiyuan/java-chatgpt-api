@@ -11,6 +11,7 @@ import com.microsoft.playwright.options.Proxy;
 import lombok.SneakyThrows;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.StringUtils;
 
 import static com.linweiyuan.chatgptapi.enums.ErrorEnum.ACCESS_DENIED;
 import static com.linweiyuan.chatgptapi.misc.Constant.CHATGPT_URL;
@@ -27,7 +28,7 @@ public class PlaywrightConfig {
     Page page() {
         var launchOptions = new BrowserType.LaunchOptions().setHeadless(true);
         var proxy = System.getenv("PROXY");
-        if (proxy != null && !proxy.isBlank()) {
+        if (StringUtils.hasText(proxy)) {
             launchOptions = launchOptions.setProxy(new Proxy(proxy));
         }
 
