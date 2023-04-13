@@ -111,8 +111,8 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 fluxSink.complete();
                 break;
             }
-
-            if (conversationResponseData.equals(DONE_FLAG)) {
+            if (conversationResponseData.charAt(0) == '!') {
+                fluxSink.next(conversationResponseData.substring(1));
                 fluxSink.next(DONE_FLAG);
                 fluxSink.complete();
                 break;
@@ -307,6 +307,13 @@ public class ChatGPTServiceImpl implements ChatGPTService {
     @SuppressWarnings({"SameParameterValue", "SpellCheckingInspection"})
     private String getPostScriptForStartConversation(String url, String accessToken, String jsonString) {
         return """
+                // get the whole data again to make sure get the endTurn message back
+                const getEndTurnMessage = (dataArray) => {
+                    dataArray.pop(); // empty
+                    dataArray.pop(); // data: [DONE]
+                    return '!' + dataArray.pop().substring(6); // endTurn message
+                };
+
                 let conversationResponseData;
 
                 const xhr = new XMLHttpRequest();
@@ -324,9 +331,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                                     if (dataArray.length) {
                                         let data = dataArray.pop(); // target data
                                         if (data === 'data: [DONE]') { // this DONE will break the ending handling
-                                            if (dataArray.length) {
-                                                data = dataArray.pop();
-                                            }
+                                            data = getEndTurnMessage(xhr.responseText.split("\\n\\n"));
                                         } else if (data.startsWith('event')) {
                                             data = data.substring(49);
                                         }
@@ -364,7 +369,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                         case xhr.DONE:
                             // keep exception handling
                             if (!window.conversationResponseData.startsWith('4')) {
-                                window.conversationResponseData = '[DONE]';
+                                window.conversationResponseData = getEndTurnMessage(xhr.responseText.split("\\n\\n"));
                             }
                             break;
                     }
