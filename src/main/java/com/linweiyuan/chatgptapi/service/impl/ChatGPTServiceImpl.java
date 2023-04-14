@@ -368,7 +368,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                         }
                         case xhr.DONE:
                             // keep exception handling
-                            if (!window.conversationResponseData.startsWith('4')) {
+                            if (!window.conversationResponseData.startsWith('4') && !window.conversationResponseData.startsWith('5')) {
                                 window.conversationResponseData = getEndTurnMessage(xhr.responseText.split("\\n\\n"));
                             }
                             break;
