@@ -1,5 +1,6 @@
 package com.linweiyuan.chatgptapi.service.impl;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linweiyuan.chatgptapi.annotation.EnabledOnChatGPT;
 import com.linweiyuan.chatgptapi.enums.ErrorEnum;
@@ -28,6 +29,7 @@ import static com.linweiyuan.chatgptapi.misc.Constant.DONE_FLAG;
 import static com.linweiyuan.chatgptapi.misc.Constant.PAGE_RELOAD_LOCK;
 import static com.linweiyuan.chatgptapi.misc.HeaderUtil.getAuthorizationHeader;
 import static com.linweiyuan.chatgptapi.misc.LogUtil.error;
+import static com.linweiyuan.chatgptapi.misc.LogUtil.info;
 
 @EnabledOnChatGPT
 @Service
@@ -125,7 +127,14 @@ public class ChatGPTServiceImpl implements ChatGPTService {
             }
             temp = conversationResponseData;
 
-            conversationResponse = objectMapper.readValue(conversationResponseData, ConversationResponse.class);
+            try {
+                conversationResponse = objectMapper.readValue(conversationResponseData, ConversationResponse.class);
+            } catch (JsonParseException e) {
+                info(conversationResponseData);
+                error(e.getMessage());
+                continue;
+            }
+
             var message = conversationResponse.conversationResponseMessage();
             if (oldContentToResponse.isBlank()) {
                 fluxSink.next(conversationResponseData);
