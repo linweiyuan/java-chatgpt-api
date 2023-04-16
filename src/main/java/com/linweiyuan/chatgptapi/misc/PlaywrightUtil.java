@@ -11,8 +11,8 @@ import lombok.SneakyThrows;
 import java.util.concurrent.TimeUnit;
 
 import static com.linweiyuan.chatgptapi.misc.Constant.PAGE_RELOAD_LOCK;
-import static com.linweiyuan.chatgptapi.misc.LogUtil.error;
-import static com.linweiyuan.chatgptapi.misc.LogUtil.warn;
+import static com.linweiyuan.chatgptapi.misc.Constant.WELCOME_TEXT;
+import static com.linweiyuan.chatgptapi.misc.LogUtil.*;
 
 public class PlaywrightUtil {
     private static final int INTERVAL = 1;
@@ -57,13 +57,17 @@ public class PlaywrightUtil {
         page.frames().stream()
                 .filter(frame -> frame.url().startsWith("https://challenges.cloudflare.com"))
                 .findFirst()
-                .ifPresentOrElse(PlaywrightUtil::clickCheckBox, iframe::click);
+                .ifPresentOrElse(PlaywrightUtil::clickCheckBox, () -> {
+                    iframe.click();
+                    totalClickCaptchaCount++;
+                });
 
         try {
             page.waitForCondition(() -> page.context().cookies().stream().anyMatch(cookie -> cookie.name.equals("cf_clearance")), new Page.WaitForConditionOptions().setTimeout(5_000));
         } catch (TimeoutError error) {
             page.reload();
             page.waitForLoadState(LoadState.NETWORKIDLE);
+            page.frames().forEach(frame -> frame.waitForLoadState(LoadState.NETWORKIDLE));
             handleCaptcha(page);
         }
     }
@@ -82,6 +86,7 @@ public class PlaywrightUtil {
         if (isCaptchaClicked(page) && isReady(page)) {
             if (totalClickCaptchaCount != 0) {
                 warn("Total click " + totalClickCaptchaCount + " times to pass captcha");
+                info(WELCOME_TEXT);
                 totalClickCaptchaCount = 0;
             }
             return page;
