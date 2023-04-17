@@ -345,7 +345,11 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                                             data = data.substring(49);
                                         }
                                         if (data) {
-                                            window.conversationResponseData = data.substring(6);
+                                            if (data.startsWith('!')) {
+                                                window.conversationResponseData = data;
+                                            } else {
+                                                window.conversationResponseData = data.substring(6);
+                                            }
                                         }
                                     }
                                     break;
