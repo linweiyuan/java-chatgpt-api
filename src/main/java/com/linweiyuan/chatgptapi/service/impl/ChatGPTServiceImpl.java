@@ -294,6 +294,22 @@ public class ChatGPTServiceImpl implements ChatGPTService {
         return ResponseEntity.ok((String) objectMapper.readValue(responseText, Map.class).get("rating"));
     }
 
+    @Override
+    public ResponseEntity<String> getModels(String accessToken) {
+        var responseText = (String) page.evaluate(
+                getGetScript(
+                        String.format(Constant.GET_MODELS_URL),
+                        accessToken,
+                        Constant.ERROR_MESSAGE_GET_MODELS
+                )
+        );
+        if (Constant.ERROR_MESSAGE_GET_MODELS.equals(responseText)) {
+            PlaywrightUtil.tryToReload(page);
+            throw new ConversationException(ErrorEnum.GET_MODELS_ERROR);
+        }
+        return ResponseEntity.ok(responseText);
+    }
+
     private String getGetScript(String url, String accessToken, String errorMessage) {
         return """
                 fetch('%s', {

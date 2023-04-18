@@ -8,34 +8,38 @@ import org.springframework.http.ResponseEntity;
 import reactor.core.publisher.Flux;
 
 public interface ChatGPTService {
-    ResponseEntity<String> getConversations(String authorization, int offset, int limit);
+    ResponseEntity<String> getConversations(String accessToken, int offset, int limit);
 
-    Flux<String> startConversation(String authorization, ConversationRequest conversationRequest);
+    Flux<String> startConversation(String accessToken, ConversationRequest conversationRequest);
 
     ResponseEntity<String> genConversationTitle(
-            String authorization,
+            String accessToken,
             String conversationId,
             GenerateTitleRequest generateTitleRequest
     );
 
     ResponseEntity<String> getConversationContent(
-            String authorization,
+            String accessToken,
             String conversationId
     );
 
     ResponseEntity<Boolean> updateConversation(
-            String authorization,
+            String accessToken,
             String conversationId,
             UpdateConversationRequest updateConversationRequest
     );
 
     ResponseEntity<Boolean> clearConversations(
-            String authorization,
+            String accessToken,
             UpdateConversationRequest updateConversationRequest
     );
 
     ResponseEntity<String> feedbackMessage(
-            String authorization,
+            String accessToken,
             FeedbackRequest feedbackRequest
+    );
+
+    ResponseEntity<String> getModels(
+            String accessToken
     );
 }
