@@ -372,6 +372,10 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                                     window.conversationResponseData = xhr.status + 'Something went wrong. If this issue persists please contact us through our help center at help.openai.com.';
                                     break;
                                 }
+                                case 404: {
+                                    window.conversationResponseData = xhr.status + JSON.parse(xhr.responseText).detail;
+                                    break;
+                                }
                                 case 413: {
                                     window.conversationResponseData = xhr.status + JSON.parse(xhr.responseText).detail.message;
                                     break;
