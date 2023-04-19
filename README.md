@@ -39,6 +39,8 @@ services:
   java-chatgpt-api:
     container_name: java-chatgpt-api
     image: linweiyuan/java-chatgpt-api
+    ports:
+      - 8080:8080
     environment:
       - CHATGPT=true
       - PROXY=socks5://chatgpt-proxy-server-warp:65535
