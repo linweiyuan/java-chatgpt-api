@@ -27,11 +27,15 @@ public class PlaywrightConfig {
     @Bean
     Page page() {
         var launchOptions = new BrowserType.LaunchOptions().setHeadless(true);
+        
+        // Proxy Auth
         var proxy = System.getenv("PROXY");
-        if (StringUtils.hasText(proxy)) {
-            launchOptions = launchOptions.setProxy(new Proxy(proxy));
-        }
-
+        if (StringUtils.hasText(proxy)) launchOptions = launchOptions.setProxy(new Proxy(proxy));
+        var proxyUsername = System.getenv("PROXY_USERNAME");
+        if (StringUtils.hasText(proxyUsername)) launchOptions = launchOptions.setUsername(proxyUsername);
+        var proxyPassword = System.getenv("PROXY_PASSWORD");
+        if (StringUtils.hasText(proxyPassword)) launchOptions = launchOptions.setPassword(proxyPassword);
+        
         // Chromium can not get cf_cookies in headless mode
         Browser browser = Playwright.create()
                 .firefox()

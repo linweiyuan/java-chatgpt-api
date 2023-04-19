@@ -2,10 +2,12 @@ services:
   java-chatgpt-api:
     build: .
     container_name: java-chatgpt-api
-    image: linweiyuan/java-chatgpt-api
+    image: skay98/java-chatgpt-api
     ports:
       - 8080:8080
     environment:
       - CHATGPT=true
       - PROXY=
+      - PROXY_USERNAME=
+      - PROXY_PASSWORD=
     restart: unless-stopped
