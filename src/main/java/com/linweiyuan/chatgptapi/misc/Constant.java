@@ -16,6 +16,7 @@ public class Constant {
     public static final String CLEAR_CONVERSATIONS_URL = CHATGPT_API_URL + "/conversations";
     public static final String FEEDBACK_MESSAGE_URL = CHATGPT_API_URL + "/conversation/message_feedback";
     public static final String GET_MODELS_URL = CHATGPT_API_URL + "/models";
+    public static final String CHECK_ACCOUNT_URL = CHATGPT_API_URL + "/accounts/check";
 
     public static final String DEFAULT_OFFSET = "0";
     public static final String DEFAULT_LIMIT = "20";
@@ -27,6 +28,7 @@ public class Constant {
     public static final String ERROR_MESSAGE_CLEAR_CONVERSATIONS = "Failed to clear conversations.";
     public static final String ERROR_MESSAGE_FEEDBACK_MESSAGE = "Failed to add feedback.";
     public static final String ERROR_MESSAGE_GET_MODELS = "Failed to get models.";
+    public static final String ERROR_MESSAGE_CHECK_ACCOUNT = "Failed to check account.";
     public static final String ERROR_MESSAGE_ACCESS_DENIED = "Access denied.";
 
     public static final Lock PAGE_RELOAD_LOCK = new ReentrantLock(true);

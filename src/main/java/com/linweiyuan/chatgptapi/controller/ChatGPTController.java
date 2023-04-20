@@ -88,4 +88,11 @@ public class ChatGPTController {
     ) {
         return chatGPTService.getModels(accessToken);
     }
+
+    @GetMapping("/accounts/check")
+    public ResponseEntity<String> checkAccount(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String accessToken
+    ) {
+        return chatGPTService.checkAccount(accessToken);
+    }
 }

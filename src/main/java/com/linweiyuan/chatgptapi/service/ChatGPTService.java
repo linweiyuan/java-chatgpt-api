@@ -42,4 +42,8 @@ public interface ChatGPTService {
     ResponseEntity<String> getModels(
             String accessToken
     );
+
+    ResponseEntity<String> checkAccount(
+            String accessToken
+    );
 }

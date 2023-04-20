@@ -304,6 +304,22 @@ public class ChatGPTServiceImpl implements ChatGPTService {
         return ResponseEntity.ok(responseText);
     }
 
+    @Override
+    public ResponseEntity<String> checkAccount(String accessToken) {
+        var responseText = (String) page.evaluate(
+                getGetScript(
+                        String.format(Constant.CHECK_ACCOUNT_URL),
+                        accessToken,
+                        Constant.ERROR_MESSAGE_CHECK_ACCOUNT
+                )
+        );
+        if (Constant.ERROR_MESSAGE_CHECK_ACCOUNT.equals(responseText)) {
+            PlaywrightUtil.tryToReload(page);
+            throw new ConversationException(ErrorEnum.CHECK_ACCOUNT_ERROR);
+        }
+        return ResponseEntity.ok(responseText);
+    }
+
     private String getGetScript(String url, String accessToken, String errorMessage) {
         return """
                 fetch('%s', {
