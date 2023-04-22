@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import static com.linweiyuan.chatgptapi.misc.Constant.DONE_FLAG;
 import static com.linweiyuan.chatgptapi.misc.Constant.PAGE_RELOAD_LOCK;
 import static com.linweiyuan.chatgptapi.misc.HeaderUtil.getAuthorizationHeader;
+import static com.linweiyuan.chatgptapi.misc.LogUtil.error;
 
 @EnabledOnChatGPT
 @Service
@@ -77,6 +78,8 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                         }
                         var oldContentToResponse = "";
                         sendConversationRequest(accessToken, conversationRequest, oldContentToResponse, fluxSink);
+                    } catch (Exception e) {
+                        error("Start conversation exception: " + e.getLocalizedMessage());
                     } finally {
                         PAGE_RELOAD_LOCK.unlock();
                     }
