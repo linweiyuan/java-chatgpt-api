@@ -70,12 +70,20 @@ public class ChatGPTServiceImpl implements ChatGPTService {
         return Flux.create(fluxSink -> executorService.submit(() -> {
                     try {
                         // add support for old chatgpt api
-                        var message = conversationRequest.messages().get(0);
+                        var message = conversationRequest.getMessages().get(0);
                         var author = message.getAuthor();
                         if (author == null || author.getRole() == null) {
                             author = new Author();
                             author.setRole("user");
                             message.setAuthor(author);
+                        }
+                        Integer timezoneOffsetMin = conversationRequest.getTimezoneOffsetMin();
+                        if (timezoneOffsetMin == null) {
+                            conversationRequest.setTimezoneOffsetMin(0);
+                        }
+                        String variantPurpose = conversationRequest.getVariantPurpose();
+                        if (variantPurpose == null) {
+                            conversationRequest.setVariantPurpose("none");
                         }
                         var oldContentToResponse = "";
                         sendConversationRequest(accessToken, conversationRequest, oldContentToResponse, fluxSink);
@@ -89,7 +97,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
     @SneakyThrows
     private void sendConversationRequest(String accessToken, ConversationRequest conversationRequest, String oldContentToResponse, FluxSink<String> fluxSink) {
         String requestBody = objectMapper.writeValueAsString(conversationRequest);
-        var messageId = conversationRequest.messages().get(0).getId();
+        var messageId = conversationRequest.getMessages().get(0).getId();
         apiPage.evaluate(getPostScriptForStartConversation(Constant.START_CONVERSATIONS_URL, getAuthorizationHeader(accessToken), requestBody, messageId));
 
         // prevent handle multiple times
@@ -148,7 +156,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
 
             var finishDetails = message.metadata().finishDetails();
             if (finishDetails != null && "max_tokens".equals(finishDetails.type())) {
-                var continueText = conversationRequest.continueText();
+                var continueText = conversationRequest.getContinueText();
                 if (StringUtils.hasText(continueText)) {
                     maxTokens = true;
                     oldContentToResponse = message.content().getParts().get(0);
@@ -166,7 +174,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 break;
             }
         }
-        if (maxTokens && StringUtils.hasText(conversationRequest.continueText())) {
+        if (maxTokens && StringUtils.hasText(conversationRequest.getContinueText())) {
             TimeUnit.SECONDS.sleep(1);
 
             var newRequest = newConversationRequest(conversationRequest, conversationResponse);
@@ -180,18 +188,20 @@ public class ChatGPTServiceImpl implements ChatGPTService {
         author.setRole("user");
         Content content = new Content();
         content.setContentType("text");
-        content.setParts(List.of(conversationRequest.continueText()));
+        content.setParts(List.of(conversationRequest.getContinueText()));
         var message = new Message();
         message.setAuthor(author);
         message.setContent(content);
         message.setId(UUID.randomUUID().toString());
         return new ConversationRequest(
-                conversationRequest.action(),
+                conversationRequest.getAction(),
                 List.of(message),
-                conversationRequest.model(),
+                conversationRequest.getModel(),
                 conversationResponse.conversationResponseMessage().id(),
                 conversationResponse.conversationId(),
-                conversationRequest.continueText()
+                conversationRequest.getTimezoneOffsetMin(),
+                conversationRequest.getVariantPurpose(),
+                conversationRequest.getContinueText()
         );
     }
 
