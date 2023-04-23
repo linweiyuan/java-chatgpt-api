@@ -18,6 +18,8 @@ public class PlaywrightUtil {
     private static final int INTERVAL = 1;
     private static int totalClickCaptchaCount = 0;
 
+    private static boolean firstTime = true;
+
     public static boolean isAccessDenied(Page page) {
         try {
             var element = page.waitForSelector(".cf-error-details", new Page.WaitForSelectorOptions().setTimeout(2000));
@@ -86,8 +88,11 @@ public class PlaywrightUtil {
         if (isCaptchaClicked(page) && isReady(page)) {
             if (totalClickCaptchaCount != 0) {
                 warn("Total click " + totalClickCaptchaCount + " times to pass captcha");
-                info(WELCOME_TEXT);
                 totalClickCaptchaCount = 0;
+            }
+            if (firstTime) {
+                info(WELCOME_TEXT);
+                firstTime = false;
             }
             return page;
         } else {

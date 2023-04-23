@@ -27,7 +27,8 @@ services:
       - 8080:8080
     environment:
       - CHATGPT=true
-      - PROXY=
+      # - PROXY=
+      # - DEBUG=pw:api
     restart: unless-stopped
 ```
 ---
@@ -44,6 +45,7 @@ services:
     environment:
       - CHATGPT=true
       - PROXY=socks5://chatgpt-proxy-server-warp:65535
+      # - DEBUG=pw:api
     depends_on:
       - chatgpt-proxy-server-warp
     restart: unless-stopped
