@@ -9,15 +9,15 @@ import org.springframework.stereotype.Component;
 @EnabledOnChatGPT
 @Component
 public class PageAutoReloadScheduler {
-    private final Page page;
+    private final Page refreshPage;
 
-    public PageAutoReloadScheduler(Page page) {
-        this.page = page;
+    public PageAutoReloadScheduler(Page refreshPage) {
+        this.refreshPage = refreshPage;
     }
 
     // auto reload every 1 minutes
     @Scheduled(fixedRate = 60_000, initialDelay = 60_000)
     public void reload() {
-        PlaywrightUtil.tryToReload(page);
+        PlaywrightUtil.tryToReload(refreshPage);
     }
 }

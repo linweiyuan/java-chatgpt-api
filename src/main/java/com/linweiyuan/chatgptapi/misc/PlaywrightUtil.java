@@ -10,7 +10,6 @@ import lombok.SneakyThrows;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.linweiyuan.chatgptapi.misc.Constant.PAGE_RELOAD_LOCK;
 import static com.linweiyuan.chatgptapi.misc.Constant.WELCOME_TEXT;
 import static com.linweiyuan.chatgptapi.misc.LogUtil.*;
 
@@ -22,11 +21,11 @@ public class PlaywrightUtil {
 
     public static boolean isAccessDenied(Page page) {
         try {
-            var element = page.waitForSelector(".cf-error-details", new Page.WaitForSelectorOptions().setTimeout(2000));
+            var element = page.waitForSelector(".cf-error-details", new Page.WaitForSelectorOptions().setTimeout(2_000));
             error(element.textContent());
             return true;
         } catch (PlaywrightException e) {
-            page.waitForTimeout(1000);
+            page.waitForTimeout(1_000);
         }
         return false;
     }
@@ -52,9 +51,7 @@ public class PlaywrightUtil {
     @SneakyThrows
     private static void tryToClickCaptcha(Page page) {
         var iframe = page.getByTitle("Widget containing a Cloudflare security challenge");
-        while (!iframe.isVisible()) {
-            TimeUnit.SECONDS.sleep(INTERVAL);
-        }
+        page.waitForCondition(iframe::isVisible);
 
         page.frames().stream()
                 .filter(frame -> frame.url().startsWith("https://challenges.cloudflare.com"))
@@ -93,6 +90,7 @@ public class PlaywrightUtil {
             if (firstTime) {
                 info(WELCOME_TEXT);
                 firstTime = false;
+                page.evaluate("window.conversationMap = new Map();");
             }
             return page;
         } else {
@@ -101,20 +99,14 @@ public class PlaywrightUtil {
     }
 
     public static void tryToReload(Page page) {
-        if (PAGE_RELOAD_LOCK.tryLock()) {
-            try {
-                page.reload();
-                page.waitForLoadState(LoadState.NETWORKIDLE);
+        try {
+            page.reload();
+            page.waitForLoadState(LoadState.NETWORKIDLE);
 
-                if (!isReady(page)) {
-                    handleCaptcha(page);
-                }
-            } catch (Exception e) {
-                // when in 10th minute, reload will fail, but after reload again here, then it will works fine
-                page.reload();
-            } finally {
-                PAGE_RELOAD_LOCK.unlock();
+            if (!isReady(page)) {
+                handleCaptcha(page);
             }
+        } catch (Exception ignored) {
         }
     }
 }

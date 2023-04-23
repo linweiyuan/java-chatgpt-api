@@ -1,8 +1,5 @@
 package com.linweiyuan.chatgptapi.misc;
 
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
 public class Constant {
     public static final String ENV_VAR_CHATGPT = "CHATGPT";
     public static final String WELCOME_TEXT = "Welcome to ChatGPT";
@@ -31,7 +28,6 @@ public class Constant {
     public static final String ERROR_MESSAGE_CHECK_ACCOUNT = "Failed to check account.";
     public static final String ERROR_MESSAGE_ACCESS_DENIED = "Access denied.";
 
-    public static final Lock PAGE_RELOAD_LOCK = new ReentrantLock(true);
     public static final String DONE_FLAG = "[DONE]";
 
     public static final String API_URL = "https://api.openai.com";
