@@ -18,6 +18,14 @@ Default is to use both ChatGPT mode and API mode, if you want to use API mode on
 
 Support proxy setting, need to specify `http` or `socks5` manually.
 
+---
+
+**If the `LOG_LEVEL` is set to `DEBUG` or `INFO`, more logs will be printed, but as a result, the disk usage will be much higher.**
+
+`chatgpt-proxy-server-warp` supports `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF`. (This is not officially supported, just using a `grep`, so the logs may not be too precise.)
+
+---
+
 ```yaml
 services:
   java-chatgpt-api:
