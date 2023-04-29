@@ -1,5 +1,9 @@
 # java-chatgpt-api
 
+# This project still works, but no more new features or bugfix, please use [go-chatgpt-api](https://github.com/linweiyuan/go-chatgpt-api).
+
+---
+
 Bypass Cloudflare using [Playwright for Java](https://github.com/microsoft/playwright-java) to use ChatGPT API.
 
 - [一种取巧的方式绕过 Cloudflare v2 验证](https://linweiyuan.github.io/2023/03/14/%E4%B8%80%E7%A7%8D%E5%8F%96%E5%B7%A7%E7%9A%84%E6%96%B9%E5%BC%8F%E7%BB%95%E8%BF%87-Cloudflare-v2-%E9%AA%8C%E8%AF%81.html)
